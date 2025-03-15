@@ -1,62 +1,63 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Validator;
+use Auth;
 
 class AuthController extends Controller
 {
+    // User Registration
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        $token = JWTAuth::fromUser($user);
+        $user->token = $token;
+        return apiResponse(true, 'Register success', $user, 201);
+    }
+
+    public function me(){
+        $user = Auth::user();
+        return apiResponse(true, 'Operation completed successfully', $user, 201);
+    }
+
+    // User Login
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
 
-        if ($token = JWTAuth::attempt($credentials)) {
-            $user = auth()->user();
-            $user->token = $token;
-            return apiResponse(true, 'Login Success', $user, 200);
+        if (!$token = JWTAuth::attempt($credentials)) {
+            return apiResponse(false, 'Invalid credentials', [], 401);
         }
-
-        return apiResponse(false, 'Unauthorized', [], 401);
+        $user = User::where('email',$request->email)->first();
+        $user->token = $token;
+        return apiResponse(true, 'Log in success', $user, 201);
     }
 
-    public function me()
-    {   
-        $user = auth()->user();
-        return apiResponse(true, 'Operation Success', $user, 200);
-    }
-
+    // User Logout
     public function logout()
     {
         auth()->logout();
-        return response()->json(['message' => 'Successfully logged out']);
-    }
-    // Register Method
-    public function register(Request $request)
-    {
-        // Validate the incoming request
-        $validator = Validator::make($request->all(), [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6', // 'confirmed' ensures 'password_confirmation' field is provided
-        ]);
-
-        // If validation fails, return error response
-        if ($validator->fails()) {
-            return apiResponse(false, 'Register Failed', [], 400);
-        }
-
-        // Create a new user
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => bcrypt($request->password), // Encrypt the password
-        ]);
-
-        // Generate JWT token for the new user
-        $token = JWTAuth::fromUser($user);
-        $user->token = $token;
-        return apiResponse(true, 'Register Success', $user, 200);
+        return apiResponse(true, 'Successfully logged out', [], 201);
     }
 }
