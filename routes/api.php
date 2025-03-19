@@ -3,6 +3,9 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ConfigController;
+use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -18,4 +21,17 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('users', [UserController::class, 'index']);
     Route::post('user/store', [UserController::class, 'store']);
+    Route::get('users/{id}', [UserController::class, 'show']);
+    Route::post('user/delete', [UserController::class, 'delete']);
+    Route::post('user/update', [UserController::class, 'update']);
+
+    Route::get('categories', [CategoryController::class, 'index']);
+    Route::post('category/store', [CategoryController::class, 'store']);
+    Route::post('category/delete', [CategoryController::class, 'delete']);
+    Route::get('category/{id}', [CategoryController::class, 'show']);
+    Route::post('category/update', [CategoryController::class, 'update']);
+
+    // account setting
+    Route::get('account-setting', [ConfigController::class, 'index']);
+    Route::post('account-setting', [ConfigController::class, 'update']);
 });
