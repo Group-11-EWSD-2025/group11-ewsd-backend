@@ -12,4 +12,5 @@ Route::middleware('auth:api')->group(function () {
     Route::post('refresh', [AuthController::class, 'refresh']);
 
     Route::get('departments', [DepartmentController::class, 'index']);
+    Route::post('department/store', [DepartmentController::class, 'store']);
 });

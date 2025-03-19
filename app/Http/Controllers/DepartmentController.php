@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
+use App\Models\UserDepartment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class DepartmentController extends Controller
 {
@@ -23,20 +25,28 @@ class DepartmentController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'user_id' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+
+        $department = Department::create([
+            'name' => $request->name
+        ]);
+
+        $assignQa = UserDepartment::create([
+            'department_id' => $department->id,
+            'user_id' => $request->user_id,
+        ]);
+        
+        return apiResponse(true, 'Operation completed successfully', $department, 200);
     }
 
     /**
