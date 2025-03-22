@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
+Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
@@ -22,6 +23,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('users', [UserController::class, 'index']);
     Route::post('user/store', [UserController::class, 'store']);
     Route::get('users/{id}', [UserController::class, 'show']);
+    Route::get('users/{id}/activity-logs', [UserController::class, 'activityLogs']);
     Route::post('user/delete', [UserController::class, 'delete']);
     Route::post('user/update', [UserController::class, 'update']);
 
@@ -34,4 +36,6 @@ Route::middleware('auth:api')->group(function () {
     // account setting
     Route::get('account-setting', [ConfigController::class, 'index']);
     Route::post('account-setting', [ConfigController::class, 'update']);
+
+    Route::post('change-password', [AuthController::class, 'changePassword']);
 });

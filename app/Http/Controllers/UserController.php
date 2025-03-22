@@ -6,9 +6,19 @@ use App\Models\UserDepartment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
+use App\Services\MailService;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
+    protected $mailService;
+
+    public function __construct(MailService $mailService)
+    {
+        $this->mailService = $mailService;
+    }
+
     public function index(Request $request)
     {
         $paginate = $request->per_page ?? 10;
@@ -47,35 +57,53 @@ class UserController extends Controller
             'profile' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-
         if ($validator->fails()) {
             $firstError = $validator->errors()->first();
             return apiResponse(false, $firstError, null, 400);
         }
 
-        if ($request->hasFile('profile')) {
-            $image = $request->file('profile');
-            $imageName = time() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('images'), $imageName);
-        }
+        try {
+            if ($request->hasFile('profile')) {
+                $image = $request->file('profile');
+                $imageName = time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('images'), $imageName);
+            }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'role' => $request->role,
-            'password' => Hash::make($request->password),
-            'profile' => $imageName ?? null,
-        ]);
+            $plainPassword = $request->password; // Store original password for email
 
-        foreach($request->department_id as $department_id){
-            UserDepartment::create([
-                'department_id' => $department_id,
-                'user_id' => $user->id
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'role' => $request->role,
+                'password' => Hash::make($plainPassword),
+                'profile' => $imageName ?? null,
             ]);
-        }
 
-        return apiResponse(true, 'Operation completed successfully', $user, 200);
+            foreach($request->department_id as $department_id){
+                UserDepartment::create([
+                    'department_id' => $department_id,
+                    'user_id' => $user->id
+                ]);
+            }
+
+            // Send welcome email with credentials
+            $emailSent = $this->mailService->sendNewUserAccountMail(
+                $user,
+                $plainPassword,
+                auth()->user()
+            );
+
+            if (!$emailSent) {
+                Log::warning('Failed to send welcome email to new user', [
+                    'user_id' => $user->id
+                ]);
+            }
+
+            return apiResponse(true, 'Operation completed successfully', $user, 200);
+        } catch (\Exception $e) {
+            return apiResponse(false, 'Failed to create user', null, 500);
+        }
     }
 
     /**
@@ -158,5 +186,18 @@ class UserController extends Controller
         $user->delete();
 
         return apiResponse(true, 'Operation completed successfully', null, 200);
+    }
+
+    public function activityLogs(Request $request)
+    {
+        $user = User::findOrFail($request->id);
+        $activityLogs = $user->activityLogs->map(function($log){
+            return [
+                'id' => $log->id,
+                'ip_address' => $log->ip_address,
+                'login_at' => Carbon::parse($log->created_at)->diffForHumans(),
+            ];
+        });
+        return apiResponse(true, 'Operation completed successfully', $activityLogs, 200);
     }
 }
