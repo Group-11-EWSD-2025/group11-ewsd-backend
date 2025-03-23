@@ -22,7 +22,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $paginate = $request->per_page ?? 10;
-        $query    = User::query();
+        $query    = User::query()->with('departments');
 
         // Filter by department_id if provided (via pivot table)
         if ($request->has('department_id')) {

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Department;
@@ -17,7 +16,15 @@ class DepartmentController extends Controller
     public function index()
     {
         $departments = Department::orderbydesc('id')->get();
-        return apiResponse(true, 'Operation completed successfully', $departments, 200);
+        $result = [];
+        foreach($departments as $department){
+            $result[] = [
+                'id' => $department->id,
+                'name' => $department->name,
+                'idea_count' => 20,
+            ];
+        }
+        return apiResponse(true, 'Operation completed successfully', $result, 200);
     }
 
     /**
@@ -29,7 +36,6 @@ class DepartmentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'user_id' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -38,14 +44,16 @@ class DepartmentController extends Controller
         }
 
         $department = Department::create([
-            'name' => $request->name
+            'name' => $request->name,
         ]);
 
-        $assignQa = UserDepartment::create([
-            'department_id' => $department->id,
-            'user_id' => $request->user_id,
-        ]);
-        
+        if ($request->user_id) {
+            $assignQa = UserDepartment::create([
+                'department_id' => $department->id,
+                'user_id'       => $request->user_id,
+            ]);
+        }
+
         return apiResponse(true, 'Operation completed successfully', $department, 200);
     }
 
@@ -61,9 +69,43 @@ class DepartmentController extends Controller
         }
 
         $department = Department::find($request->id);
-        UserDepartment::where('department_id',$department->id)->delete();
+        UserDepartment::where('department_id', $department->id)->delete();
         $department->delete();
 
         return apiResponse(true, 'Operation completed successfully', [], 200);
+    }
+
+    public function detail($id)
+    {
+        $department = Department::find($id);
+        $department->idea_count = 20;
+        return apiResponse(true, 'Operation completed successfully', $department, 200);
+    }
+
+    public function update(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'id' => 'required|exists:departments,id'
+        ]);
+
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+        $department = Department::find($request->id);
+        $department->update([
+            'name' => $request->name,
+        ]);
+
+        // if ($request->user_id && $request->old_user_id) {
+        //     UserDepartment::where('user_id',$request->old_user_id)->where('department_id',$department->id)->delete();
+        //     $assignQa = UserDepartment::create([
+        //         'department_id' => $department->id,
+        //         'user_id'       => $request->user_id,
+        //     ]);
+        // }
+
+        return apiResponse(true, 'Operation completed successfully', $department, 200);
     }
 }

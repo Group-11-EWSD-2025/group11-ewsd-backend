@@ -1,16 +1,16 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Helpers\ActivityLogger;
 use App\Models\User;
+use App\Services\MailService;
+use Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
-use Auth;
-use App\Helpers\ActivityLogger;
-use App\Services\MailService;
+use Tymon\JWTAuth\Facades\JWTAuth;
+
 class AuthController extends Controller
 {
     protected $mailService;
@@ -24,8 +24,8 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
         ]);
 
@@ -35,17 +35,18 @@ class AuthController extends Controller
         }
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        $token = JWTAuth::fromUser($user);
+        $token       = JWTAuth::fromUser($user);
         $user->token = $token;
         return apiResponse(true, 'Register success', $user, 201);
     }
 
-    public function me(){
+    public function me()
+    {
         $user = Auth::user();
         return apiResponse(true, 'Operation completed successfully', $user, 201);
     }
@@ -55,7 +56,7 @@ class AuthController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
-        if (!$token = JWTAuth::attempt($credentials)) {
+        if (! $token = JWTAuth::attempt($credentials)) {
             return apiResponse(false, 'Invalid credentials', [], 401);
         }
 
@@ -64,7 +65,7 @@ class AuthController extends Controller
 
         return apiResponse(true, 'Login successful', [
             'token' => $token,
-            'user' => $user
+            'user'  => $user,
         ], 200);
     }
 
@@ -91,7 +92,7 @@ class AuthController extends Controller
         }
 
         try {
-            $user = User::where('email', $request->email)->first();
+            $user        = User::where('email', $request->email)->first();
             $newPassword = Str::random(10);
 
             $user->password = Hash::make($newPassword);
@@ -109,7 +110,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'current_password' => 'required',
-            'new_password' => 'required|min:8|different:current_password',
+            'new_password'     => 'required|min:8|different:current_password',
         ]);
 
         if ($validator->fails()) {
@@ -120,7 +121,7 @@ class AuthController extends Controller
         try {
             $user = auth()->user();
 
-            if (!Hash::check($request->current_password, $user->password)) {
+            if (! Hash::check($request->current_password, $user->password)) {
                 return apiResponse(false, 'Current password is incorrect', null, 400);
             }
 
@@ -130,5 +131,33 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return apiResponse(false, 'Failed to change password', null, 500);
         }
+    }
+
+    public function getRoleList()
+    {
+        $roles = [
+            [
+                'value'       => 'admin',
+                'label'       => 'Admin',
+                'description' => 'Admin role',
+            ],
+            [
+                'value'       => 'qa-manager',
+                'label'       => 'QA Manager',
+                'description' => 'QA Manager role',
+            ],
+            [
+                'value'       => 'qa-coordinator',
+                'label'       => 'QA Coordinator',
+                'description' => 'QA Coordinator role',
+            ],
+            [
+                'value'       => 'staff',
+                'label'       => 'Staff',
+                'description' => 'Staff role',
+            ],
+        ];
+
+        return apiResponse(true, 'Operation completed successfully', $roles, 200);
     }
 }

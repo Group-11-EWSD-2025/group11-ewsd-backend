@@ -15,10 +15,13 @@ Route::middleware('auth:api')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::get('roles', [AuthController::class, 'getRoleList']);
 
     Route::get('departments', [DepartmentController::class, 'index']);
     Route::post('department/store', [DepartmentController::class, 'store']);
     Route::post('department/delete', [DepartmentController::class, 'delete']);
+    Route::get('department/detail/{id}', [DepartmentController::class, 'detail']);
+    Route::post('department/update', [DepartmentController::class, 'update']);
 
     Route::get('users', [UserController::class, 'index']);
     Route::post('user/store', [UserController::class, 'store']);
