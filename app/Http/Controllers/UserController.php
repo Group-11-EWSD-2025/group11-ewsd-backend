@@ -3,12 +3,12 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\UserDepartment;
+use App\Services\MailService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
-use App\Services\MailService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
@@ -36,7 +36,13 @@ class UserController extends Controller
             $query->where('role', $request->role);
         }
 
-        $users = $query->paginate($paginate); // Adjust per page count as needed
+                                                            // Apply sorting
+        $orderBy = $request->get('order_by', 'created_at'); // default column
+        $sortBy  = $request->get('sort_by', 'desc');        // default direction
+
+        $query->orderBy($orderBy, $sortBy);
+
+        $users = $query->paginate($paginate);
 
         return apiResponse(true, 'Operation completed successfully', $users, 200);
     }
@@ -48,13 +54,13 @@ class UserController extends Controller
         ]);
 
         $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'phone' => 'required',
-            'role' => 'required',
+            'name'          => 'required',
+            'email'         => 'required|email|unique:users',
+            'phone'         => 'required',
+            'role'          => 'required',
             'department_id' => 'array|required|exists:departments,id',
-            'password' => 'required',
-            'profile' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'password'      => 'required',
+            'profile'       => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -64,7 +70,7 @@ class UserController extends Controller
 
         try {
             if ($request->hasFile('profile')) {
-                $image = $request->file('profile');
+                $image     = $request->file('profile');
                 $imageName = time() . '.' . $image->getClientOriginalExtension();
                 $image->move(public_path('images'), $imageName);
             }
@@ -72,18 +78,18 @@ class UserController extends Controller
             $plainPassword = $request->password; // Store original password for email
 
             $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'role' => $request->role,
+                'name'     => $request->name,
+                'email'    => $request->email,
+                'phone'    => $request->phone,
+                'role'     => $request->role,
                 'password' => Hash::make($plainPassword),
-                'profile' => $imageName ?? null,
+                'profile'  => $imageName ?? null,
             ]);
 
-            foreach($request->department_id as $department_id){
+            foreach ($request->department_id as $department_id) {
                 UserDepartment::create([
                     'department_id' => $department_id,
-                    'user_id' => $user->id
+                    'user_id'       => $user->id,
                 ]);
             }
 
@@ -94,9 +100,9 @@ class UserController extends Controller
                 auth()->user()
             );
 
-            if (!$emailSent) {
+            if (! $emailSent) {
                 Log::warning('Failed to send welcome email to new user', [
-                    'user_id' => $user->id
+                    'user_id' => $user->id,
                 ]);
             }
 
@@ -122,7 +128,6 @@ class UserController extends Controller
         }
     }
 
-
     public function update(Request $request)
     {
         $request->merge([
@@ -130,13 +135,13 @@ class UserController extends Controller
         ]);
 
         $validator = Validator::make($request->all(), [
-            'id' => 'required|exists:users,id',
-            'name' => 'required',
-            'email' => 'required|email',
-            'phone' => 'required',
-            'role' => 'required',
+            'id'            => 'required|exists:users,id',
+            'name'          => 'required',
+            'email'         => 'required|email',
+            'phone'         => 'required',
+            'role'          => 'required',
             'department_id' => 'array|required',
-            'profile' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'profile'       => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -147,30 +152,29 @@ class UserController extends Controller
         $user = User::findOrFail($request->id);
 
         if ($request->hasFile('profile')) {
-            $image = $request->file('profile');
+            $image     = $request->file('profile');
             $imageName = time() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('images'), $imageName);
         }
 
         $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'role' => $request->role,
+            'name'    => $request->name,
+            'email'   => $request->email,
+            'phone'   => $request->phone,
+            'role'    => $request->role,
             'profile' => $imageName ?? $user->profile,
         ]);
 
         // Update departments
         UserDepartment::where('user_id', $user->id)->delete();
-        foreach($request->department_id as $department_id){
+        foreach ($request->department_id as $department_id) {
             UserDepartment::create([
                 'department_id' => $department_id,
-                'user_id' => $user->id
+                'user_id'       => $user->id,
             ]);
         }
         return apiResponse(true, 'Operation completed successfully', $user, 200);
     }
-
 
     public function delete(Request $request)
     {
@@ -190,12 +194,12 @@ class UserController extends Controller
 
     public function activityLogs(Request $request)
     {
-        $user = User::findOrFail($request->id);
-        $activityLogs = $user->activityLogs->map(function($log){
+        $user         = User::findOrFail($request->id);
+        $activityLogs = $user->activityLogs->map(function ($log) {
             return [
-                'id' => $log->id,
+                'id'         => $log->id,
                 'ip_address' => $log->ip_address,
-                'login_at' => Carbon::parse($log->created_at)->diffForHumans(),
+                'login_at'   => Carbon::parse($log->created_at)->diffForHumans(),
             ];
         });
         return apiResponse(true, 'Operation completed successfully', $activityLogs, 200);
