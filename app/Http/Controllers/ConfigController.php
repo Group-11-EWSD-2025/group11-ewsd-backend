@@ -16,7 +16,7 @@ class ConfigController extends Controller
                 'first_closure_date' => null,
                 'final_closure_date' => null
             ];
-            return apiResponse(false, 'Config not found', $defaultConfig, 404);
+            return apiResponse(true, 'Config has not been created yet', $defaultConfig, 200);
         }
 
         $config = [
