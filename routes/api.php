@@ -5,6 +5,8 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ConfigController;
+use App\Http\Controllers\IdeaController;
+use App\Http\Controllers\AcademicYearController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
@@ -35,6 +37,18 @@ Route::middleware('auth:api')->group(function () {
     Route::post('category/delete', [CategoryController::class, 'delete']);
     Route::get('category/{id}', [CategoryController::class, 'show']);
     Route::post('category/update', [CategoryController::class, 'update']);
+
+    Route::get('ideas', [IdeaController::class, 'index']);
+    Route::post('idea/store', [IdeaController::class, 'store']);
+    Route::get('idea/{id}', [IdeaController::class, 'show']);
+    Route::post('idea/update', [IdeaController::class, 'update']);
+    Route::post('idea/delete', [IdeaController::class, 'delete']);
+
+    Route::get('academic-years', [AcademicYearController::class, 'index']);
+    Route::post('academic-year/store', [AcademicYearController::class, 'store']);
+    Route::post('academic-year/delete', [AcademicYearController::class, 'delete']);
+    Route::get('academic-year/detail/{id}', [AcademicYearController::class, 'detail']);
+    Route::post('academic-year/update', [AcademicYearController::class, 'update']);
 
     // account setting
     Route::get('account-setting', [ConfigController::class, 'index']);

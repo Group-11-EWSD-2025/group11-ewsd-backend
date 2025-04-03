@@ -1,7 +1,7 @@
 <?php
-
 namespace App\Exceptions;
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 
@@ -47,4 +47,19 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+   
+
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        // Check if it's an API request
+        if ($request->expectsJson()) {
+            return apiResponse(false, 'Invalid Token', [], 401);
+        }
+    
+        // Fallback for web
+        return redirect()->guest(route('login'));
+    }
+    
+
 }
