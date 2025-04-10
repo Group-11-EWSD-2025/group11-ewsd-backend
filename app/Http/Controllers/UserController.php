@@ -62,7 +62,7 @@ class UserController extends Controller
             'email'         => 'required|email|unique:users',
             'phone'         => 'required',
             'role'          => 'required',
-            'department_id' => 'array|required|exists:departments,id',
+            'department_id' => 'array|required',
             'password'      => 'required',
             'profile'       => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
