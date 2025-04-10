@@ -21,6 +21,18 @@ class AcademicYearController extends Controller
         // get all academic years sorted by created_at in descending order
 
         $academicYears = AcademicYear::orderBy('created_at', 'desc')->get();
+
+        $academicYears = $academicYears->map(function ($academicYear) {
+            return [
+                'id' => $academicYear->id,
+                'start_date' => $academicYear->start_date,
+                'end_date' => $academicYear->end_date,
+                'idea_submission_deadline' => $academicYear->idea_submission_deadline,
+                'final_closure_date' => $academicYear->final_closure_date,
+                // if now() is before final_closure_date then status is active else closed
+                'status' => now() < $academicYear->final_closure_date ? 'active' : 'closed',
+            ];
+        });
         return apiResponse(true,"Operation completed successfully", $academicYears, 200);
     }
 
@@ -44,10 +56,28 @@ class AcademicYearController extends Controller
     {
         // check validation
         $validator = Validator::make($request->all(), [
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-            'idea_submission_deadline' => 'sometime|date|after:start_date',
-            'final_closure_date' => 'sometime|date|after:idea_submission_deadline',
+            'start_date' => 'sometimes|date',
+            'end_date' => 'sometimes|date|after:start_date',
+            'idea_submission_deadline' => [
+                'required',
+                'date',
+                'after:start_date',
+                function ($attribute, $value, $fail) {
+                    if (strtotime($value) < strtotime(now()->addWeeks(2))) {
+                        $fail('The ' . $attribute . ' must be at least 2 weeks from now.');
+                    }
+                },
+            ],
+            'final_closure_date' => [
+                'required',
+                'date',
+                'after:idea_submission_deadline',
+                function ($attribute, $value, $fail) {
+                    if (strtotime($value) < strtotime(now()->addWeeks(2))) {
+                        $fail('The ' . $attribute . ' must be at least 2 weeks from now.');
+                    }
+                },
+            ],
         ]);
 
         if ($validator->fails()) {
@@ -61,7 +91,6 @@ class AcademicYearController extends Controller
             'end_date' => $request->end_date,
             'idea_submission_deadline' => $request->idea_submission_deadline,
             'final_closure_date' => $request->final_closure_date,
-            'status' => "active",
         ]);
 
         return apiResponse(true, "Operation completed successfully", $academicYear, 201);
@@ -111,8 +140,27 @@ class AcademicYearController extends Controller
             'id' => 'required|integer|exists:academic_years,id',
             'start_date' => 'sometimes|date',
             'end_date' => 'sometimes|date|after:start_date',
-            'idea_submission_deadline' => 'sometimes|date|after:start_date',
-            'final_closure_date' => 'sometimes|date|after:idea_submission_deadline',
+            // need to be current date + 2 weeks
+            'idea_submission_deadline' => [
+                'sometimes',
+                'date',
+                'after:start_date',
+                function ($attribute, $value, $fail) {
+                    if (strtotime($value) < strtotime(now()->addWeeks(2))) {
+                        $fail('The ' . $attribute . ' must be at least 2 weeks from now.');
+                    }
+                },
+            ],
+            'final_closure_date' => [
+                'sometimes',
+                'date',
+                'after:idea_submission_deadline',
+                function ($attribute, $value, $fail) {
+                    if (strtotime($value) < strtotime(now()->addWeeks(2))) {
+                        $fail('The ' . $attribute . ' must be at least 2 weeks from now.');
+                    }
+                },
+            ],
             'status' => 'sometimes|string',
         ]);
         if ($validator->fails()) {
@@ -128,7 +176,6 @@ class AcademicYearController extends Controller
             'end_date' => $request->end_date ?? $academicYear->end_date,
             'idea_submission_deadline' => $request->idea_submission_deadline ?? $academicYear->idea_submission_deadline,
             'final_closure_date' => $request->final_closure_date ?? $academicYear->final_closure_date,
-            'status' => $request->status ?? $academicYear->status,
         ]);
         return apiResponse(true, "Operation completed successfully", $academicYear, 200);
     }

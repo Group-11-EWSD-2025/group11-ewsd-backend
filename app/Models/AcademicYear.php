@@ -13,7 +13,6 @@ class AcademicYear extends Model
         'end_date',
         'idea_submission_deadline',
         'final_closure_date',
-        'status',
     ];
     protected $guarded = [];
 }
