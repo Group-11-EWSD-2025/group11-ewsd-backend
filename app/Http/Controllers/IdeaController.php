@@ -51,6 +51,9 @@ class IdeaController extends Controller
         }
         $user             = auth()->user();
         $department       = $user->departments()->first();
+        if(!$department) {
+            return apiResponse(false, 'Department not found', null, 400);
+        }
         $academic_year_id = 1;
         $idea             = Idea::create([
             'category_id'      => $request->category_id,
