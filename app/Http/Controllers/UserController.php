@@ -208,4 +208,37 @@ class UserController extends Controller
         });
         return apiResponse(true, 'Operation completed successfully', $activityLogs, 200);
     }
+
+    public function updateProfileImage(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+
+        try {
+            if ($request->hasFile('image')) {
+                $image     = $request->file('image');
+                $imageName = time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('img'), $imageName);
+
+                // Generate full URL including domain
+                $imageUrl = asset('img/' . $imageName);
+            }
+
+            auth()->user()->update([
+                'profile' => $imageUrl ?? auth()->user()->profile, // keep existing profile if no new image
+            ]);
+
+            $user = auth()->user();
+            return apiResponse(true, 'Operation completed successfully', $user, 200);
+        } catch (\Exception $e) {
+            dd($e);
+            return apiResponse(false, 'Failed to update profile image', null, 500);
+        }
+    }
 }

@@ -31,6 +31,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('users/{id}/activity-logs', [UserController::class, 'activityLogs']);
     Route::post('user/delete', [UserController::class, 'delete']);
     Route::post('user/update', [UserController::class, 'update']);
+    Route::post('user/profile-image', [UserController::class, 'updateProfileImage']);
 
     Route::get('categories', [CategoryController::class, 'index']);
     Route::post('category/store', [CategoryController::class, 'store']);
