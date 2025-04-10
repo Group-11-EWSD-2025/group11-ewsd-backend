@@ -31,6 +31,10 @@ class UserController extends Controller
             });
         }
 
+        if ($request->has('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%')->orWhere('email', 'like', '%' . $request->search . '%');
+        }
+
         // Filter by role if provided
         if ($request->has('role')) {
             $query->where('role', $request->role);
