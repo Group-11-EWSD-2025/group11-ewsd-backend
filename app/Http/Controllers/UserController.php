@@ -142,13 +142,9 @@ class UserController extends Controller
         ]);
 
         $validator = Validator::make($request->all(), [
-            'id'            => 'required|exists:users,id',
-            'name'          => 'required',
-            'email'         => 'required|email',
-            'phone'         => 'required',
-            'role'          => 'required',
-            'department_id' => 'array|required',
-            'profile'       => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'id'    => 'required|exists:users,id',
+            'name'  => 'required',
+            'email' => 'required|email',
         ]);
 
         if ($validator->fails()) {
@@ -168,20 +164,22 @@ class UserController extends Controller
         }
 
         $user->update([
-            'name'    => $request->name,
-            'email'   => $request->email,
-            'phone'   => $request->phone,
-            'role'    => $request->role,
+            'name'    => $request->name ?? $user->name,
+            'email'   => $request->email ?? $user->email,
+            'phone'   => $request->phone ?? $user->phone,
+            'role'    => $request->role ?? $user->role,
             'profile' => $imageUrl ?? $user->profile, // keep existing profile if no new image
         ]);
 
         // Update departments
-        UserDepartment::where('user_id', $user->id)->delete();
-        foreach ($request->department_id as $department_id) {
-            UserDepartment::create([
-                'department_id' => $department_id,
-                'user_id'       => $user->id,
-            ]);
+        if ($request->has('department_id')) {
+            UserDepartment::where('user_id', $user->id)->delete();
+            foreach ($request->department_id as $department_id) {
+                UserDepartment::create([
+                    'department_id' => $department_id,
+                    'user_id'       => $user->id,
+                ]);
+            }
         }
         return apiResponse(true, 'Operation completed successfully', $user, 200);
     }
