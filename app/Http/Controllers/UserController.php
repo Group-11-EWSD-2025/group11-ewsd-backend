@@ -76,7 +76,10 @@ class UserController extends Controller
             if ($request->hasFile('profile')) {
                 $image     = $request->file('profile');
                 $imageName = time() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('images'), $imageName);
+                $image->move(public_path('img'), $imageName);
+
+                // Generate full URL including domain
+                $imageUrl = asset('img/' . $imageName);
             }
 
             $plainPassword = $request->password; // Store original password for email
@@ -158,7 +161,10 @@ class UserController extends Controller
         if ($request->hasFile('profile')) {
             $image     = $request->file('profile');
             $imageName = time() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('images'), $imageName);
+            $image->move(public_path('img'), $imageName);
+
+            // Generate full URL including domain
+            $imageUrl = asset('img/' . $imageName);
         }
 
         $user->update([
@@ -166,7 +172,7 @@ class UserController extends Controller
             'email'   => $request->email,
             'phone'   => $request->phone,
             'role'    => $request->role,
-            'profile' => $imageName ?? $user->profile,
+            'profile' => $imageUrl ?? $user->profile, // keep existing profile if no new image
         ]);
 
         // Update departments

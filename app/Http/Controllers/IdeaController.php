@@ -2,7 +2,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Idea;
+use App\Models\IdeaFile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class IdeaController extends Controller
 {
@@ -29,27 +31,50 @@ class IdeaController extends Controller
         }
 
         if ($request->filled('order_by')) {
-           $query->orderByDesc($request->order_by);
+            $query->orderByDesc($request->order_by);
         }
         $ideas = $query->paginate(5);
 
         return apiResponse(true, 'Operation completed successfully', $ideas, 200);
     }
-
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'privacy'     => 'required',
+            'content'     => 'required',
+            'category_id' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+        $user             = auth()->user();
+        $department       = $user->departments()->first();
+        $academic_year_id = 1;
+        $idea             = Idea::create([
+            'category_id'      => $request->category_id,
+            'department_id'    => $department->id,
+            'user_id'          => $user->id,
+            'content'          => $request->content,
+            'academic_year_id' => $academic_year_id,
+        ]);
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $fileName = time() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('img'), $fileName);
+
+                // Generate full URL including domain
+                $fileUrl = asset('img/' . $fileName);
+
+                IdeaFile::create([
+                    'idea_id' => $idea->id,
+                    'file'    => $fileUrl,
+                ]);
+            }
+        }
+        $idea->load('files');
+        return apiResponse(true, 'Operation completed successfully', $idea, 201);
     }
 
     /**
