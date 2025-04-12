@@ -44,7 +44,7 @@ class IdeaController extends Controller
             'content'     => 'required',
             'category_id' => 'required',
         ]);
-
+        dd($request->all()); 
         if ($validator->fails()) {
             $firstError = $validator->errors()->first();
             return apiResponse(false, $firstError, null, 400);
