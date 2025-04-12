@@ -11,7 +11,7 @@ class IdeaController extends Controller
 
     public function index(Request $request)
     {
-        $query = Idea::with('files','category', 'department', 'academicYear', 'user');
+        $query = Idea::with('files', 'category', 'department', 'academicYear', 'user');
 
         // Apply filters only if parameters exist
         if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -49,9 +49,9 @@ class IdeaController extends Controller
             $firstError = $validator->errors()->first();
             return apiResponse(false, $firstError, null, 400);
         }
-        $user             = auth()->user();
-        $department       = $user->departments()->first();
-        if(!$department) {
+        $user       = auth()->user();
+        $department = $user->departments()->first();
+        if (! $department) {
             return apiResponse(false, 'Department not found', null, 400);
         }
         $academic_year_id = 1;
@@ -60,11 +60,12 @@ class IdeaController extends Controller
             'department_id'    => $department->id,
             'user_id'          => $user->id,
             'content'          => $request->content,
+            'privacy'          => $request->privacy,
             'academic_year_id' => $academic_year_id,
         ]);
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $fileName = time() . '.' . $file->getClientOriginalExtension();
+                $fileName = time() . '_' . rand(1000, 9999) . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('img'), $fileName);
 
                 // Generate full URL including domain
