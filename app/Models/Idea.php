@@ -14,4 +14,23 @@ class Idea extends Model
     {
         return $this->hasMany(IdeaFile::class);
     }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function academicYear()
+    {
+        return $this->belongsTo(AcademicYear::class);
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

@@ -11,7 +11,7 @@ class IdeaController extends Controller
 
     public function index(Request $request)
     {
-        $query = Idea::with('files');
+        $query = Idea::with('files','category', 'department', 'academicYear', 'user');
 
         // Apply filters only if parameters exist
         if ($request->filled('start_date') && $request->filled('end_date')) {
