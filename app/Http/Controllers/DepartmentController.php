@@ -13,19 +13,28 @@ class DepartmentController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
-    {
-        $departments = Department::orderbydesc('id')->get();
-        $result = [];
-        foreach($departments as $department){
-            $result[] = [
-                'id' => $department->id,
-                'name' => $department->name,
-                'idea_count' => 20,
-            ];
-        }
-        return apiResponse(true, 'Operation completed successfully', $result, 200);
+    public function index(Request $request)
+{
+    if ($request->has('user_id')) {
+        $departments = Department::whereHas('users', function ($query) use ($request) {
+            $query->where('user_id', $request->user_id);
+        })->orderByDesc('id')->get();
+    } else {
+        $departments = Department::orderByDesc('id')->get();
     }
+
+    $result = [];
+    foreach ($departments as $department) {
+        $result[] = [
+            'id' => $department->id,
+            'name' => $department->name,
+            'idea_count' => 20, // You can change this if it's dynamic
+        ];
+    }
+
+    return apiResponse(true, 'Operation completed successfully', $result, 200);
+}
+
 
     /**
      * Show the form for creating a new resource.
