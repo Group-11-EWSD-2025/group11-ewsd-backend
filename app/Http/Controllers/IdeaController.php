@@ -39,12 +39,12 @@ class IdeaController extends Controller
     }
     public function store(Request $request)
     {
+        // dd($request);
         $validator = Validator::make($request->all(), [
             'privacy'     => 'required',
             'content'     => 'required',
             'category_id' => 'required',
         ]);
-        dd($request->all()); 
         if ($validator->fails()) {
             $firstError = $validator->errors()->first();
             return apiResponse(false, $firstError, null, 400);
