@@ -65,7 +65,7 @@ class IdeaController extends Controller
         ]);
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $fileName = rand(1000, 9999) . '.' . $file->getClientOriginalExtension();
+                $fileName = rand(10000, 99999) . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('img'), $fileName);
 
                 // Generate full URL including domain
