@@ -137,9 +137,6 @@ class UserController extends Controller
 
     public function update(Request $request)
     {
-        $request->merge([
-            'department_id' => is_array($request->department_id) ? $request->department_id : explode(',', $request->department_id),
-        ]);
 
         $validator = Validator::make($request->all(), [
             'id'    => 'required|exists:users,id',
@@ -170,9 +167,10 @@ class UserController extends Controller
             'role'    => $request->role ?? $user->role,
             'profile' => $imageUrl ?? $user->profile, // keep existing profile if no new image
         ]);
-
-        // Update departments
         if ($request->has('department_id')) {
+            $request->merge([
+                'department_id' => is_array($request->department_id) ? $request->department_id : explode(',', $request->department_id),
+            ]);
             UserDepartment::where('user_id', $user->id)->delete();
             foreach ($request->department_id as $department_id) {
                 UserDepartment::create([
