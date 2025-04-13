@@ -94,7 +94,7 @@ class DepartmentController extends Controller
     public function detail($id)
     {
         $department = Department::find($id);
-        $department->idea_count = 20;
+        $department->idea_count = $department->ideas()->count();
         return apiResponse(true, 'Operation completed successfully', $department, 200);
     }
 
