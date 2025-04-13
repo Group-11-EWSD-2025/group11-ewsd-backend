@@ -10,7 +10,7 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         $paginate = $request->per_page ?? 10;
-        $query = Category::query();
+        $query = Category::query()->withCount('ideas');
 
         // Add any filters if needed
         if ($request->has('search')) {
