@@ -123,7 +123,7 @@ class IdeaController extends Controller
             // Store this view in cache for a long time (forever or for a certain period, e.g., 1 week)
             Cache::put($cacheKey, true, now()->addDays(7));
         }
-        $idea->is_liked = $idea->likes()->where('user_id', $user->id)->exists();
+        $idea->is_liked   = $idea->likes()->where('user_id', $user->id)->exists();
         $idea->is_unliked = $idea->unLikes()->where('user_id', $user->id)->exists();
         $idea->load('files');
 
@@ -148,9 +148,51 @@ class IdeaController extends Controller
      * @param  \App\Models\Idea  $idea
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Idea $idea)
+    public function update(Request $request)
     {
-        //
+        // dd($request);
+        $validator = Validator::make($request->all(), [
+            'privacy'     => 'required',
+            'content'     => 'required',
+            'category_id' => 'required',
+            'id'          => 'required|exists:ideas,id',
+        ]);
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+        $user             = auth()->user();
+        $academic_year_id = $academic_year->id;
+        $idea             = Idea::find($request->id);
+        $idea->update([
+            'category_id' => $request->category_id,
+            'content'     => $request->content,
+            'privacy'     => $request->privacy,
+        ]);
+        if ($request->hasFile('files')) {
+            // Delete existing files
+            foreach ($idea->files as $file) {
+                $filePath = public_path($file->file);
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+                $file->delete();
+            }
+            foreach ($request->file('files') as $file) {
+                $fileName = rand(10000, 99999) . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('img'), $fileName);
+
+                // Generate full URL including domain
+                $fileUrl = asset('img/' . $fileName);
+
+                IdeaFile::create([
+                    'idea_id' => $idea->id,
+                    'file'    => $fileUrl,
+                ]);
+            }
+        }
+        $idea->load('files');
+        return apiResponse(true, 'Operation completed successfully', $idea, 201);
     }
 
     /**
