@@ -13,11 +13,11 @@ class CategoryController extends Controller
         $query = Category::query();
 
         // Add any filters if needed
-        if ($request->has('name')) {
-            $query->where('name', 'like', '%' . $request->name . '%');
+        if ($request->has('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $categories = $query->paginate($paginate);
+        $categories = $query->orderbydesc('id')->paginate($paginate);
 
         return apiResponse(true, 'Operation completed successfully', $categories, 200);
     }
@@ -88,6 +88,9 @@ class CategoryController extends Controller
 
         try {
             $category = Category::findOrFail($request->id);
+            if($category->ideas()->count() > 0) {
+                return apiResponse(false, 'Category cannot be deleted because it has associated ideas', null, 400);
+            }
             $category->delete();
 
             return apiResponse(true, 'Operation completed successfully', null, 200);
