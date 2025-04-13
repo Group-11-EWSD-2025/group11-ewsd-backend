@@ -20,9 +20,12 @@ class DepartmentController extends Controller
         if ($count == 0) {
             $departments = Department::orderByDesc('id')->get();
         }
-        $departments = Department::whereHas('users', function ($query) use ($request) {
-            $query->where('user_id', $request->user_id);
-        })->orderByDesc('id')->get();
+        else{
+            $departments = Department::whereHas('users', function ($query) use ($request) {
+                $query->where('user_id', $request->user_id);
+            })->orderByDesc('id')->get();
+        }
+        
     } else {
         $departments = Department::orderByDesc('id')->get();
     }
@@ -32,7 +35,7 @@ class DepartmentController extends Controller
         $result[] = [
             'id' => $department->id,
             'name' => $department->name,
-            'idea_count' => 20, // You can change this if it's dynamic
+            'idea_count' => $department->ideas()->count(),
         ];
     }
 

@@ -13,4 +13,8 @@ class Department extends Model
     {
         return $this->belongsToMany(User::class, 'user_departments');
     }
+    public function ideas()
+    {
+        return $this->hasMany(Idea::class);
+    }
 }
