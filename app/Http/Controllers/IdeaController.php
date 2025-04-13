@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Idea;
 use App\Models\IdeaFile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class IdeaController extends Controller
@@ -89,12 +90,26 @@ class IdeaController extends Controller
      */
     public function show($id)
     {
-        $idea = Idea::with('files', 'category', 'department', 'user', 'comments','comments.replies')->find($id);
+        $user = auth()->user();
+        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies')->find($id);
+
         if (! $idea) {
             return apiResponse(false, 'Idea not found', null, 404);
         }
-        $idea->increment('views');
+
+        // Use user_id and idea_id to create a unique cache key
+        $cacheKey = "idea_viewed_{$user->id}_{$idea->id}";
+
+        // Check if user has already viewed this idea
+        if (! Cache::has($cacheKey)) {
+            $idea->increment('views');
+
+            // Store this view in cache for a long time (forever or for a certain period, e.g., 1 week)
+            Cache::put($cacheKey, true, now()->addDays(7));
+        }
+
         $idea->load('files');
+
         return apiResponse(true, 'Operation completed successfully', $idea, 200);
     }
 
