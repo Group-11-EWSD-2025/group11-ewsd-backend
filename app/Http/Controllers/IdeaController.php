@@ -107,7 +107,7 @@ class IdeaController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies')->withCount(['likes', 'unLikes', 'comments'])->find($id);
+        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies','comments.user')->withCount(['likes', 'unLikes', 'comments'])->find($id);
 
         if (! $idea) {
             return apiResponse(false, 'Idea not found', null, 404);
