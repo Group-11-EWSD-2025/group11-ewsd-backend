@@ -1,12 +1,14 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DepartmentController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ConfigController;
-use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ReplyController;
+use App\Http\Controllers\ConfigController;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\IdeaController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
@@ -50,6 +52,10 @@ Route::middleware('auth:api')->group(function () {
     Route::post('academic-year/delete', [AcademicYearController::class, 'delete']);
     Route::get('academic-year/detail/{id}', [AcademicYearController::class, 'detail']);
     Route::post('academic-year/update', [AcademicYearController::class, 'update']);
+
+    //Comments
+    Route::post('comment/store', [CommentController::class, 'store']);
+    Route::post('reply/store', [ReplyController::class, 'store']);
 
     // account setting
     Route::get('account-setting', [ConfigController::class, 'index']);

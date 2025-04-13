@@ -26,8 +26,8 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('academic_year', function (Blueprint $table) {
-            //
+        Schema::table('academic_years', function (Blueprint $table) {
+            $table->dropColumn('status');
         });
     }
 };

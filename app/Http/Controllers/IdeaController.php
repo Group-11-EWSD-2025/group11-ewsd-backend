@@ -87,9 +87,15 @@ class IdeaController extends Controller
      * @param  \App\Models\Idea  $idea
      * @return \Illuminate\Http\Response
      */
-    public function show(Idea $idea)
+    public function show($id)
     {
-        //
+        $idea = Idea::with('files', 'category', 'department', 'user', 'comments','comments.replies')->find($id);
+        if (! $idea) {
+            return apiResponse(false, 'Idea not found', null, 404);
+        }
+        $idea->increment('views');
+        $idea->load('files');
+        return apiResponse(true, 'Operation completed successfully', $idea, 200);
     }
 
     /**
