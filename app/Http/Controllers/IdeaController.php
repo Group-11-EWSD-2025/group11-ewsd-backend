@@ -12,7 +12,8 @@ class IdeaController extends Controller
 
     public function index(Request $request)
     {
-        $query = Idea::with('files', 'category', 'department', 'academicYear', 'user');
+        $query = Idea::with('files', 'category', 'department', 'academicYear', 'user')
+        ->withCount(['likes', 'unLikes', 'comments']); // 👈 Add counts here
 
         // Apply filters only if parameters exist
         if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -91,7 +92,7 @@ class IdeaController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies')->find($id);
+        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies')->withCount(['likes', 'unLikes', 'comments'])->find($id);
 
         if (! $idea) {
             return apiResponse(false, 'Idea not found', null, 404);

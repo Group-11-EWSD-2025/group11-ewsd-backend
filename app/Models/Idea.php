@@ -38,4 +38,12 @@ class Idea extends Model
     {
         return $this->hasMany(Comment::class);
     }
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
+    public function unlikes()
+    {
+        return $this->hasMany(UnLike::class);
+    }
 }

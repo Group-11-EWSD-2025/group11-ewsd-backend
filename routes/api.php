@@ -6,9 +6,11 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\ConfigController;
+use App\Http\Controllers\UnLikeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LikeController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
@@ -56,6 +58,14 @@ Route::middleware('auth:api')->group(function () {
     //Comments
     Route::post('comment/store', [CommentController::class, 'store']);
     Route::post('reply/store', [ReplyController::class, 'store']);
+
+     //Like
+     Route::post('like/store', [LikeController::class, 'like']);
+     Route::post('like/remove', [LikeController::class, 'removeLike']);
+
+     //unlike
+     Route::post('unlike/store', [UnLikeController::class, 'unlike']);
+     Route::post('unlike/remove', [UnLikeController::class, 'removeUnLike']);
 
     // account setting
     Route::get('account-setting', [ConfigController::class, 'index']);
