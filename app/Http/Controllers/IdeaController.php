@@ -13,9 +13,9 @@ class IdeaController extends Controller
     public function index(Request $request)
     {
         $query = Idea::with('files', 'category', 'department', 'academicYear', 'user')
-        ->withCount(['likes', 'unLikes', 'comments']); // 👈 Add counts here
+            ->withCount(['likes', 'unLikes', 'comments']);
 
-        // Apply filters only if parameters exist
+        // Apply filters
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('created_at', [$request->start_date, $request->end_date]);
         } elseif ($request->filled('start_date')) {
@@ -35,10 +35,21 @@ class IdeaController extends Controller
         if ($request->filled('order_by')) {
             $query->orderByDesc($request->order_by);
         }
+
         $ideas = $query->paginate(5);
+
+        $userId = auth()->id(); // get current user
+
+        // Add flag for is_liked and is_unliked
+        $ideas->getCollection()->transform(function ($idea) use ($userId) {
+            $idea->is_liked   = $idea->likes()->where('user_id', $userId)->exists();
+            $idea->is_unliked = $idea->unLikes()->where('user_id', $userId)->exists();
+            return $idea;
+        });
 
         return apiResponse(true, 'Operation completed successfully', $ideas, 200);
     }
+
     public function store(Request $request)
     {
         // dd($request);
@@ -112,7 +123,8 @@ class IdeaController extends Controller
             // Store this view in cache for a long time (forever or for a certain period, e.g., 1 week)
             Cache::put($cacheKey, true, now()->addDays(7));
         }
-
+        $idea->is_liked = $idea->likes()->where('user_id', $user->id)->exists();
+        $idea->is_unliked = $idea->unLikes()->where('user_id', $user->id)->exists();
         $idea->load('files');
 
         return apiResponse(true, 'Operation completed successfully', $idea, 200);
