@@ -34,6 +34,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('users/{id}', [UserController::class, 'show']);
     Route::get('users/{id}/activity-logs', [UserController::class, 'activityLogs']);
     Route::post('user/delete', [UserController::class, 'delete']);
+    Route::post('user/disable', [UserController::class, 'disable']);
     Route::post('user/update', [UserController::class, 'update']);
     Route::post('user/profile-image', [UserController::class, 'updateProfileImage']);
 

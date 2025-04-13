@@ -61,6 +61,9 @@ class AuthController extends Controller
         }
 
         $user = auth()->user();
+        if ($user->is_disable == 1) {
+            return apiResponse(false, 'Your account is disabled', [], 403);
+        }
         ActivityLogger::logLogin($user->id);
 
         return apiResponse(true, 'Login successful', [

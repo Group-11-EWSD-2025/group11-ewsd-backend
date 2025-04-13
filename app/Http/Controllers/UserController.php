@@ -242,4 +242,20 @@ class UserController extends Controller
             return apiResponse(false, 'Failed to update profile image', null, 500);
         }
     }
+
+    public function disable(Request $request){
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+        $user = User::findOrFail($request->id);
+        $user->update([
+            'is_disable' => 1,
+        ]);
+        return apiResponse(true, 'Operation completed successfully', null, 200);
+    }
 }
