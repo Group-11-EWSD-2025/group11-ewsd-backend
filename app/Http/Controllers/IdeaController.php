@@ -147,8 +147,20 @@ class IdeaController extends Controller
      * @param  \App\Models\Idea  $idea
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Idea $idea)
+    public function delete(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:ideas,id',
+        ]);
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+        $idea = Idea::find($request->id);
+        if ($idea) {
+            $idea->delete();
+        }
+
+        return apiResponse(true, 'Operation completed successfully', [], 200);
     }
 }
