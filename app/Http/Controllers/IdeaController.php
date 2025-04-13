@@ -56,7 +56,11 @@ class IdeaController extends Controller
         if (! $department) {
             return apiResponse(false, 'Department not found', null, 400);
         }
-        $academic_year_id = 1;
+        $academic_year = getActiveAcademicYear();
+        if (! $academic_year) {
+            return apiResponse(false, 'Academic year not found', null, 400);
+        }
+        $academic_year_id = $academic_year->id;
         $idea             = Idea::create([
             'category_id'      => $request->category_id,
             'department_id'    => $department->id,

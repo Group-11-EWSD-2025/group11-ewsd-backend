@@ -10,3 +10,10 @@ function apiResponse($status, $message, $data, $statusCode)
         'body' => $data,
     ], $statusCode);
 }
+
+function getActiveAcademicYear()
+{
+    return \App\Models\AcademicYear::where('start_date', '<=', now())
+        ->where('end_date', '>=', now())
+        ->first();
+}
