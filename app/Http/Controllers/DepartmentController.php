@@ -16,6 +16,10 @@ class DepartmentController extends Controller
     public function index(Request $request)
 {
     if ($request->has('user_id')) {
+        $count = UserDepartment::where('user_id', $request->user_id)->count();
+        if ($count == 0) {
+            $departments = Department::orderByDesc('id')->get();
+        }
         $departments = Department::whereHas('users', function ($query) use ($request) {
             $query->where('user_id', $request->user_id);
         })->orderByDesc('id')->get();
