@@ -162,7 +162,6 @@ class IdeaController extends Controller
             return apiResponse(false, $firstError, null, 400);
         }
         $user             = auth()->user();
-        $academic_year_id = $academic_year->id;
         $idea             = Idea::find($request->id);
         $idea->update([
             'category_id' => $request->category_id,
