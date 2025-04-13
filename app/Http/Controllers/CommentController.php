@@ -39,6 +39,7 @@ class CommentController extends Controller
         $validator = Validator::make($request->all(), [
             'idea_id' => 'required|exists:ideas,id',
             'content' => 'required',
+            'privacy' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -51,6 +52,7 @@ class CommentController extends Controller
             'idea_id' => $request->idea_id,
             'user_id' => $user->id,
             'content' => $request->content,
+            'privacy' => $request->privacy,
         ]);
 
         return apiResponse(true, 'Operation completed successfully', $comment, 200);
