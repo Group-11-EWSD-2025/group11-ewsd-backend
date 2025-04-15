@@ -33,12 +33,12 @@ class IdeaController extends Controller
         }
 
         if ($request->filled('order_by')) {
-            if ($request->order_by == 'likes_count') {
+            if($request->order_by == 'likes_count') {
                 $query->orderBy('likes_count', 'desc');
             } else {
                 $query->orderByDesc($request->order_by);
             }
-
+           
         }
 
         $ideas = $query->paginate(5);
@@ -112,7 +112,7 @@ class IdeaController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies', 'comments.user')->withCount(['likes', 'unLikes', 'comments'])->find($id);
+        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies','comments.user')->withCount(['likes', 'unLikes', 'comments'])->find($id);
 
         if (! $idea) {
             return apiResponse(false, 'Idea not found', null, 404);
@@ -161,43 +161,40 @@ class IdeaController extends Controller
             'content'     => 'required',
             'category_id' => 'required',
             'id'          => 'required|exists:ideas,id',
+            'existing_files' => 'array',
         ]);
         if ($validator->fails()) {
             $firstError = $validator->errors()->first();
             return apiResponse(false, $firstError, null, 400);
         }
-        $user = auth()->user();
-        $idea = Idea::find($request->id);
+        $user             = auth()->user();
+        $idea             = Idea::find($request->id);
         $idea->update([
             'category_id' => $request->category_id,
             'content'     => $request->content,
             'privacy'     => $request->privacy,
         ]);
+        IdeaFile::where('idea_id', $idea->id)->delete();
         if ($request->hasFile('files')) {
             // Delete existing files
-            IdeaFile::where('idea_id', $idea->id)->delete();
+            foreach ($request->file('files') as $file) {
+                $fileName = rand(10000, 99999) . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('img'), $fileName);
 
-            foreach ($request->file('files', []) as $file) {
-                // Check if the name of the file looks like a URL
-                if (str_starts_with($file->getClientOriginalName(), 'http')) {
-                    IdeaFile::create([
-                        'idea_id' => $idea->id,
-                        'file'    => $file->getClientOriginalName(), // save the URL directly
-                    ]);
-                } else {
-                    // Regular uploaded file
-                    $fileName = rand(10000, 99999) . '.' . $file->getClientOriginalExtension();
-                    $file->move(public_path('img'), $fileName);
+                // Generate full URL including domain
+                $fileUrl = asset('img/' . $fileName);
 
-                    $fileUrl = asset('img/' . $fileName);
-
-                    IdeaFile::create([
-                        'idea_id' => $idea->id,
-                        'file'    => $fileUrl,
-                    ]);
-                }
+                IdeaFile::create([
+                    'idea_id' => $idea->id,
+                    'file'    => $fileUrl,
+                ]);
             }
-
+        }
+        foreach($request->existing_files as $file) {
+            IdeaFile::create([
+                'idea_id' => $idea->id,
+                'file'    => $file,
+            ]);
         }
         $idea->load('files');
         return apiResponse(true, 'Operation completed successfully', $idea, 201);
