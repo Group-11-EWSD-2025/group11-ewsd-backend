@@ -175,9 +175,7 @@ class IdeaController extends Controller
         ]);
         if ($request->hasFile('files')) {
             // Delete existing files
-            foreach ($idea->files as $file) {
-                $file->delete();
-            }
+            IdeaFile::where('idea_id', $idea->id)->delete();
             foreach ($request->file('files') as $file) {
                 $fileName = rand(10000, 99999) . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('img'), $fileName);
