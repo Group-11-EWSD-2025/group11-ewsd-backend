@@ -33,7 +33,12 @@ class IdeaController extends Controller
         }
 
         if ($request->filled('order_by')) {
-            $query->orderByDesc($request->order_by);
+            if($request->order_by == 'likes_count') {
+                $query->orderBy('likes_count', 'desc');
+            } else {
+                $query->orderByDesc($request->order_by);
+            }
+           
         }
 
         $ideas = $query->paginate(5);
