@@ -33,12 +33,12 @@ class IdeaController extends Controller
         }
 
         if ($request->filled('order_by')) {
-            if($request->order_by == 'likes_count') {
+            if ($request->order_by == 'likes_count') {
                 $query->orderBy('likes_count', 'desc');
             } else {
                 $query->orderByDesc($request->order_by);
             }
-           
+
         }
 
         $ideas = $query->paginate(5);
@@ -112,7 +112,7 @@ class IdeaController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies','comments.user')->withCount(['likes', 'unLikes', 'comments'])->find($id);
+        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies', 'comments.user')->withCount(['likes', 'unLikes', 'comments'])->find($id);
 
         if (! $idea) {
             return apiResponse(false, 'Idea not found', null, 404);
@@ -157,18 +157,17 @@ class IdeaController extends Controller
     {
         // dd($request);
         $validator = Validator::make($request->all(), [
-            'privacy'     => 'required',
-            'content'     => 'required',
-            'category_id' => 'required',
-            'id'          => 'required|exists:ideas,id',
-            'existing_files' => 'array',
+            'privacy'        => 'required',
+            'content'        => 'required',
+            'category_id'    => 'required',
+            'id'             => 'required|exists:ideas,id',
         ]);
         if ($validator->fails()) {
             $firstError = $validator->errors()->first();
             return apiResponse(false, $firstError, null, 400);
         }
-        $user             = auth()->user();
-        $idea             = Idea::find($request->id);
+        $user = auth()->user();
+        $idea = Idea::find($request->id);
         $idea->update([
             'category_id' => $request->category_id,
             'content'     => $request->content,
@@ -190,7 +189,7 @@ class IdeaController extends Controller
                 ]);
             }
         }
-        foreach($request->existing_files as $file) {
+        foreach ($request->existing_files as $file) {
             IdeaFile::create([
                 'idea_id' => $idea->id,
                 'file'    => $file,
