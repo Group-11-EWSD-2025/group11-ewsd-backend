@@ -176,10 +176,6 @@ class IdeaController extends Controller
         if ($request->hasFile('files')) {
             // Delete existing files
             foreach ($idea->files as $file) {
-                $filePath = public_path($file->file);
-                if (file_exists($filePath)) {
-                    unlink($filePath);
-                }
                 $file->delete();
             }
             foreach ($request->file('files') as $file) {
