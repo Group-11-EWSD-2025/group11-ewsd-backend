@@ -178,14 +178,14 @@ class IdeaController extends Controller
             IdeaFile::where('idea_id', $idea->id)->delete();
 
             foreach ($request->file('files', []) as $file) {
-                if (is_string($file) && str_starts_with($file, 'https')) {
-                    // If it's a URL string
+                // Check if the name of the file looks like a URL
+                if (str_starts_with($file->getClientOriginalName(), 'http')) {
                     IdeaFile::create([
                         'idea_id' => $idea->id,
-                        'file'    => $file,
+                        'file'    => $file->getClientOriginalName(), // save the URL directly
                     ]);
-                } elseif ($file instanceof \Illuminate\Http\UploadedFile) {
-                    // If it's an uploaded file
+                } else {
+                    // Regular uploaded file
                     $fileName = rand(10000, 99999) . '.' . $file->getClientOriginalExtension();
                     $file->move(public_path('img'), $fileName);
 
