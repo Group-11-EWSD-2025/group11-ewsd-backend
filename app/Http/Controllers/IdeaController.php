@@ -189,7 +189,8 @@ class IdeaController extends Controller
                 ]);
             }
         }
-        foreach ($request->existing_files as $file) {
+        $existingFiles = json_decode($request->existing_files, true);
+        foreach ($existingFiles as $file) {
             IdeaFile::create([
                 'idea_id' => $idea->id,
                 'file'    => $file,
