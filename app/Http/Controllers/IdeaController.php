@@ -51,6 +51,7 @@ class IdeaController extends Controller
         $ideas->getCollection()->transform(function ($idea) use ($userId) {
             $idea->is_liked   = $idea->likes()->where('user_id', $userId)->exists();
             $idea->is_unliked = $idea->unLikes()->where('user_id', $userId)->exists();
+            $idea->is_report  = $idea->report()->where('user_id', $userId)->exists(); 
             return $idea;
         });
 
@@ -132,6 +133,7 @@ class IdeaController extends Controller
         }
         $idea->is_liked   = $idea->likes()->where('user_id', $user->id)->exists();
         $idea->is_unliked = $idea->unLikes()->where('user_id', $user->id)->exists();
+        $idea->is_report  = $idea->report()->where('user_id', $userId)->exists(); 
         $idea->load('files');
 
         return apiResponse(true, 'Operation completed successfully', $idea, 200);
