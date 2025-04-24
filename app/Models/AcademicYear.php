@@ -15,4 +15,9 @@ class AcademicYear extends Model
         'final_closure_date',
     ];
     protected $guarded = [];
+
+    public function idea()
+    {
+        return $this->hasMany(Idea::class);
+    }
 }

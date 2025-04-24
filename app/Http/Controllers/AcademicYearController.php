@@ -20,8 +20,7 @@ class AcademicYearController extends Controller
     {
         // get all academic years sorted by created_at in descending order
 
-        $academicYears = AcademicYear::orderBy('created_at', 'desc')->get();
-
+        $academicYears = AcademicYear::orderBy('created_at', 'desc')->withCount('idea')->get();
         $academicYears = $academicYears->map(function ($academicYear) {
             return [
                 'id' => $academicYear->id,
@@ -29,6 +28,7 @@ class AcademicYearController extends Controller
                 'end_date' => $academicYear->end_date,
                 'idea_submission_deadline' => $academicYear->idea_submission_deadline,
                 'final_closure_date' => $academicYear->final_closure_date,
+                'idea_count' => $academicYear->idea_count,
                 // if now() is before final_closure_date then status is active else closed
                 'status' => now() < $academicYear->final_closure_date ? 'active' : 'closed',
             ];

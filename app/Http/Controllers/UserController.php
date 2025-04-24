@@ -256,6 +256,22 @@ class UserController extends Controller
         $user->update([
             'is_disable' => 1,
         ]);
-        return apiResponse(true, 'Operation completed successfully', null, 200);
+        return apiResponse(true, 'Operation completed successfully', $user, 200);
+    }
+
+    public function enable(Request $request){
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+        $user = User::findOrFail($request->id);
+        $user->update([
+            'is_disable' => 0,
+        ]);
+        return apiResponse(true, 'Operation completed successfully', $user, 200);
     }
 }
