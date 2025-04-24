@@ -5,8 +5,8 @@ use App\Models\Idea;
 use App\Models\IdeaFile;
 use App\Models\IdeaReport;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class IdeaController extends Controller
@@ -15,7 +15,7 @@ class IdeaController extends Controller
     public function index(Request $request)
     {
         $query = Idea::with('files', 'category', 'department', 'academicYear', 'user')
-            ->withCount(['likes', 'unLikes', 'comments']);
+            ->withCount(['likes', 'unLikes', 'comments','report']);
 
         // Apply filters
         if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -114,7 +114,7 @@ class IdeaController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies', 'comments.user')->withCount(['likes', 'unLikes', 'comments'])->find($id);
+        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies', 'comments.user')->withCount(['likes', 'unLikes', 'comments','report'])->find($id);
 
         if (! $idea) {
             return apiResponse(false, 'Idea not found', null, 404);
@@ -159,10 +159,10 @@ class IdeaController extends Controller
     {
         // dd($request);
         $validator = Validator::make($request->all(), [
-            'privacy'        => 'required',
-            'content'        => 'required',
-            'category_id'    => 'required',
-            'id'             => 'required|exists:ideas,id',
+            'privacy'     => 'required',
+            'content'     => 'required',
+            'category_id' => 'required',
+            'id'          => 'required|exists:ideas,id',
         ]);
         if ($validator->fails()) {
             $firstError = $validator->errors()->first();
@@ -223,6 +223,44 @@ class IdeaController extends Controller
         }
 
         return apiResponse(true, 'Operation completed successfully', [], 200);
+    }
+
+    public function hide(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:ideas,id',
+        ]);
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+        $idea = Idea::find($request->id);
+        if ($idea) {
+            $idea->update([
+                'status' => 'hide',
+            ]);
+        }
+
+        return apiResponse(true, 'Operation completed successfully', $idea, 200);
+    }
+
+    public function unhide(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:ideas,id',
+        ]);
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+        $idea = Idea::find($request->id);
+        if ($idea) {
+            $idea->update([
+                'status' => 'active',
+            ]);
+        }
+
+        return apiResponse(true, 'Operation completed successfully', $idea, 200);
     }
 
     public function report(Request $request)

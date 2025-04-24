@@ -50,6 +50,8 @@ Route::middleware('auth:api')->group(function () {
     Route::post('idea/update', [IdeaController::class, 'update']);
     Route::post('idea/delete', [IdeaController::class, 'delete']);
     Route::post('idea/report', [IdeaController::class, 'report']);
+    Route::post('idea/hide', [IdeaController::class, 'hide']);
+    Route::post('idea/unhide', [IdeaController::class, 'unhide']);
 
     Route::get('academic-years', [AcademicYearController::class, 'index']);
     Route::post('academic-year/store', [AcademicYearController::class, 'store']);
