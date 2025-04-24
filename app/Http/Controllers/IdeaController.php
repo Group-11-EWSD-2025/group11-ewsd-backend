@@ -42,7 +42,11 @@ class IdeaController extends Controller
             }
 
         }
-
+        if ($request->filled('is_hidden')) {
+            if($request->is_hidden == 0){
+                $query->where('status', 'active');
+            }
+        }
         $ideas = $query->paginate(5);
 
         $userId = auth()->id(); // get current user
