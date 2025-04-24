@@ -133,7 +133,7 @@ class IdeaController extends Controller
         }
         $idea->is_liked   = $idea->likes()->where('user_id', $user->id)->exists();
         $idea->is_unliked = $idea->unLikes()->where('user_id', $user->id)->exists();
-        $idea->is_report  = $idea->report()->where('user_id', $userId)->exists(); 
+        $idea->is_report  = $idea->report()->where('user_id', $user->id)->exists(); 
         $idea->load('files');
 
         return apiResponse(true, 'Operation completed successfully', $idea, 200);
