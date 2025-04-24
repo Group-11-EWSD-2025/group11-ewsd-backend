@@ -3,8 +3,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Idea;
 use App\Models\IdeaFile;
+use App\Models\IdeaReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class IdeaController extends Controller
@@ -220,6 +222,23 @@ class IdeaController extends Controller
             $idea->delete();
         }
 
+        return apiResponse(true, 'Operation completed successfully', [], 200);
+    }
+
+    public function report(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'idea_id' => 'required|exists:ideas,id',
+        ]);
+        if ($validator->fails()) {
+            $firstError = $validator->errors()->first();
+            return apiResponse(false, $firstError, null, 400);
+        }
+        $user = Auth::user();
+        IdeaReport::create([
+            'user_id' => $user->id,
+            'idea_id' => $request->idea_id,
+        ]);
         return apiResponse(true, 'Operation completed successfully', [], 200);
     }
 }

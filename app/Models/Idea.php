@@ -47,4 +47,9 @@ class Idea extends Model
     {
         return $this->hasMany(UnLike::class);
     }
+
+    public function report()
+    {
+        return $this->hasMany(IdeaReport::class);
+    }
 }

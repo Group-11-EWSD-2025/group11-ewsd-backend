@@ -49,6 +49,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('idea/{id}', [IdeaController::class, 'show']);
     Route::post('idea/update', [IdeaController::class, 'update']);
     Route::post('idea/delete', [IdeaController::class, 'delete']);
+    Route::post('idea/report', [IdeaController::class, 'report']);
 
     Route::get('academic-years', [AcademicYearController::class, 'index']);
     Route::post('academic-year/store', [AcademicYearController::class, 'store']);
