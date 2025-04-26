@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
 {
@@ -164,8 +165,28 @@ class AuthController extends Controller
         return apiResponse(true, 'Operation completed successfully', $roles, 200);
     }
 
-    public function requestPasswordReset(Request $request){
+    public function requestPasswordReset(Request $request)
+    {
         $user = auth()->user();
-        return apiResponse(true, 'Operation completed successfully', [], 200);
+
+        if (! $user) {
+            return apiResponse(false, 'User not authenticated', [], 401);
+        }
+
+                                        // Generate a new random password
+        $newPassword = Str::random(10); // 10 characters long
+
+        // Update the user's password (hash it!)
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
+        // Send the new password via email
+        Mail::raw("Your new password is: {$newPassword}", function ($message) use ($user) {
+            $message->to($user->email)
+                ->subject('Your New Password');
+        });
+
+        return apiResponse(true, 'New password has been sent to your email.', [], 200);
     }
+
 }
