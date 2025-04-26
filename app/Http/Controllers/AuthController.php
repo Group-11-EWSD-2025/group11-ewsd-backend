@@ -169,9 +169,8 @@ class AuthController extends Controller
 
     public function requestPasswordReset(Request $request)
     {
-        $user  = auth()->user();
         $email = $request->email;
-
+        $user = User::where('email',$email)->first();
         if (! $user) {
             return apiResponse(false, 'User not authenticated', [], 401);
         }

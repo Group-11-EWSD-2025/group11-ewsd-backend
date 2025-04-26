@@ -17,6 +17,7 @@ Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('reset-password', [AuthController::class, 'forgotPassword']);
 Route::get('export/idea-list', [IdeaController::class, 'export']);
+Route::post('password-reset/request', [AuthController::class, 'requestPasswordReset']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
@@ -79,6 +80,6 @@ Route::middleware('auth:api')->group(function () {
     Route::post('account-setting', [ConfigController::class, 'update']);
 
     Route::post('change-password', [AuthController::class, 'changePassword']);
-    Route::post('password-reset/request', [AuthController::class, 'requestPasswordReset']);
+   
 
 });
