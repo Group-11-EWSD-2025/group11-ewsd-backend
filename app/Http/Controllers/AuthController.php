@@ -168,7 +168,7 @@ class AuthController extends Controller
     public function requestPasswordReset(Request $request)
     {
         $user = auth()->user();
-
+        $email = $request->email;
         if (! $user) {
             return apiResponse(false, 'User not authenticated', [], 401);
         }
@@ -181,11 +181,10 @@ class AuthController extends Controller
         $user->save();
 
         // Send the new password via email
-        Mail::raw("Your new password is: {$newPassword}", function ($message) use ($user) {
-            $message->to($user->email)
+        $result = Mail::raw("Your new password is: {$newPassword}", function ($message) use ($email) {
+            $message->to($email)
                 ->subject('Your New Password');
         });
-
         return apiResponse(true, 'New password has been sent to your email.', [], 200);
     }
 
