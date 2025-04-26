@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('reset-password', [AuthController::class, 'forgotPassword']);
+Route::get('export/idea-list', [IdeaController::class, 'export']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
@@ -53,7 +54,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('idea/report', [IdeaController::class, 'report']);
     Route::post('idea/hide', [IdeaController::class, 'hide']);
     Route::post('idea/unhide', [IdeaController::class, 'unhide']);
-    Route::get('export/idea-list', [IdeaController::class, 'export']);
+   
 
     Route::get('academic-years', [AcademicYearController::class, 'index']);
     Route::post('academic-year/store', [AcademicYearController::class, 'store']);
