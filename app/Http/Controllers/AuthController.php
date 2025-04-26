@@ -7,10 +7,12 @@ use App\Services\MailService;
 use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class AuthController extends Controller
 {
@@ -167,25 +169,44 @@ class AuthController extends Controller
 
     public function requestPasswordReset(Request $request)
     {
-        $user = auth()->user();
+        $user  = auth()->user();
         $email = $request->email;
+
         if (! $user) {
             return apiResponse(false, 'User not authenticated', [], 401);
         }
 
-                                        // Generate a new random password
-        $newPassword = Str::random(10); // 10 characters long
+        // Start DB Transaction
+        DB::beginTransaction();
 
-        // Update the user's password (hash it!)
-        $user->password = Hash::make($newPassword);
-        $user->save();
+        try {
+            // Generate a new random password
+            $newPassword = Str::random(10);
 
-        // Send the new password via email
-        $result = Mail::raw("Your new password is: {$newPassword}", function ($message) use ($email) {
-            $message->to($email)
-                ->subject('Your New Password');
-        });
-        return apiResponse(true, 'New password has been sent to your email.', [], 200);
+            // Update password
+            $user->password = Hash::make($newPassword);
+            $user->save();
+
+            // Optionally: Cache the new password temporarily for reference (auto-expire in 10 minutes)
+            Cache::put("password_reset_{$user->id}", $newPassword, now()->addMinutes(10));
+
+            // Send new password email
+            Mail::raw("Your new password is: {$newPassword}", function ($message) use ($email) {
+                $message->to($email)
+                    ->subject('Your New Password');
+            });
+
+            // Commit transaction
+            DB::commit();
+
+            return apiResponse(true, 'New password has been sent to your email.', [], 200);
+
+        } catch (\Exception $e) {
+            // Rollback if anything fails
+            DB::rollBack();
+
+            return apiResponse(false, 'Failed to reset password. Please try again.', ['error' => $e->getMessage()], 500);
+        }
     }
 
 }
