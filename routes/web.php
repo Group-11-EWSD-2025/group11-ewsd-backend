@@ -16,3 +16,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+
+Route::get('/idea-download-temp/{file}', function ($file) {
+    $fullPath = sys_get_temp_dir() . '/' . $file;
+
+    if (!file_exists($fullPath)) {
+        abort(404);
+    }
+
+    return response()->download($fullPath)->deleteFileAfterSend(true);
+})->name('idea.download_temp');

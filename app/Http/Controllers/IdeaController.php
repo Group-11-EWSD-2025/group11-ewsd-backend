@@ -8,9 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Writer\Csv;
+use ZipArchive;
 
 class IdeaController extends Controller
 {
@@ -295,7 +297,16 @@ class IdeaController extends Controller
         $request->validate([
             'department_id'    => 'nullable',
             'academic_year_id' => 'nullable',
+            'csv'              => 'nullable|boolean',
+            'zip'              => 'nullable|boolean',
         ]);
+
+        $isCsv = $request->boolean('csv');
+        $isZip = $request->boolean('zip');
+
+        if (! $isCsv && ! $isZip) {
+            return response()->json(['message' => 'At least one of csv or zip must be true.'], 422);
+        }
 
         // Build query
         $query = Idea::query();
@@ -308,40 +319,85 @@ class IdeaController extends Controller
             $query->where('academic_year_id', $request->academic_year_id);
         }
 
-        // Get the ideas
-        $ideas = $query->with(['department', 'academicYear'])->get();
-        // Create spreadsheet
-        $spreadsheet = new Spreadsheet();
-        $sheet       = $spreadsheet->getActiveSheet();
+        $ideas = $query->with(['department', 'academicYear', 'files'])->get();
 
-        // Header row
-        $sheet->setCellValue('A1', 'ID');
-        $sheet->setCellValue('B1', 'Title');
-        $sheet->setCellValue('C1', 'Description');
-        $sheet->setCellValue('D1', 'Department');
-        $sheet->setCellValue('E1', 'Academic Year');
-        $sheet->setCellValue('F1', 'Created At');
+        $downloads = [];
 
-        // Fill data
-        $row = 2;
-        foreach ($ideas as $idea) {
-            $sheet->setCellValue('A' . $row, $idea->id);
-            $sheet->setCellValue('B' . $row, $idea->title);
-            $sheet->setCellValue('C' . $row, $idea->description);
-            $sheet->setCellValue('D' . $row, $idea->department->name ?? '-');
-            $sheet->setCellValue('E' . $row, $idea->academicYear->name ?? '-');
-            $sheet->setCellValue('F' . $row, $idea->created_at->format('Y-m-d'));
-            $row++;
+        if ($isCsv) {
+            // Create Spreadsheet
+            $spreadsheet = new Spreadsheet();
+            $sheet       = $spreadsheet->getActiveSheet();
+
+            $sheet->setCellValue('A1', 'ID');
+            $sheet->setCellValue('B1', 'Title');
+            $sheet->setCellValue('C1', 'Description');
+            $sheet->setCellValue('D1', 'Department');
+            $sheet->setCellValue('E1', 'Academic Year');
+            $sheet->setCellValue('F1', 'Created At');
+
+            $row = 2;
+            foreach ($ideas as $idea) {
+                $sheet->setCellValue('A' . $row, $idea->id);
+                $sheet->setCellValue('B' . $row, $idea->title);
+                $sheet->setCellValue('C' . $row, $idea->description);
+                $sheet->setCellValue('D' . $row, $idea->department->name ?? '-');
+                $sheet->setCellValue('E' . $row, $idea->academicYear->name ?? '-');
+                $sheet->setCellValue('F' . $row, $idea->created_at->format('Y-m-d'));
+                $row++;
+            }
+
+            $csvTempFilePath = tempnam(sys_get_temp_dir(), 'ideas') . '.csv';
+            $writer          = new Csv($spreadsheet);
+            $writer->save($csvTempFilePath);
+
+            $downloads['csv'] = basename($csvTempFilePath);
         }
 
-        // Prepare the Excel file for download
-        $writer   = new Xlsx($spreadsheet);
-        $filename = 'idea_list_' . now()->format('Ymd_His') . '.xlsx';
+        if ($isZip) {
+            $zipTempFilePath = tempnam(sys_get_temp_dir(), 'ideas_zip') . '.zip';
+            $zip             = new ZipArchive();
 
-        // Output
-        $tempFile = tempnam(sys_get_temp_dir(), $filename);
-        $writer->save($tempFile);
+            if ($zip->open($zipTempFilePath, ZipArchive::CREATE) === true) {
+                foreach ($ideas as $idea) {
+                    foreach ($idea->files as $file) {
+                        if (! empty($file->file)) {
+                            $parsedUrl = parse_url($file->file);
+                            $localPath = public_path($parsedUrl['path']);
+                            if (file_exists($localPath)) {
+                                $filePath = $localPath;
+                                $fileName = basename($file->file);
+                                $zip->addFile($filePath, $idea->id . '_' . $fileName);
+                            }
+                        }
+                    }
+                }
+                $zip->close();
 
-        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+                $downloads['zip'] = basename($zipTempFilePath);
+            } else {
+                return response()->json(['message' => 'Could not create ZIP file.'], 500);
+            }
+        }
+
+        // If only one type (csv or zip)
+        if (count($downloads) === 1) {
+            $type     = array_key_first($downloads);
+            $filename = $type === 'csv' ? 'idea_list_' . now()->format('Ymd_His') . '.csv' : 'idea_images_' . now()->format('Ymd_His') . '.zip';
+            $fullPath = sys_get_temp_dir() . '/' . $downloads[$type];
+
+            return response()->download($fullPath, $filename)->deleteFileAfterSend(true);
+        }
+
+        // If both csv and zip, return auto download page
+        if (count($downloads) === 2) {
+            $csvUrl = route('idea.download_temp', ['file' => $downloads['csv']]);
+            $zipUrl = route('idea.download_temp', ['file' => $downloads['zip']]);
+
+            return response()->view('idea.auto_download', [
+                'csvUrl' => $csvUrl,
+                'zipUrl' => $zipUrl,
+            ]);
+        }
     }
+
 }
