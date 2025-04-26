@@ -53,6 +53,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('idea/report', [IdeaController::class, 'report']);
     Route::post('idea/hide', [IdeaController::class, 'hide']);
     Route::post('idea/unhide', [IdeaController::class, 'unhide']);
+    Route::get('export/idea-list', [IdeaController::class, 'export']);
 
     Route::get('academic-years', [AcademicYearController::class, 'index']);
     Route::post('academic-year/store', [AcademicYearController::class, 'store']);
@@ -77,4 +78,6 @@ Route::middleware('auth:api')->group(function () {
     Route::post('account-setting', [ConfigController::class, 'update']);
 
     Route::post('change-password', [AuthController::class, 'changePassword']);
+    Route::post('password-reset/request', [AuthController::class, 'requestPasswordReset']);
+
 });

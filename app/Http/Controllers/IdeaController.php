@@ -7,7 +7,10 @@ use App\Models\IdeaReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class IdeaController extends Controller
 {
@@ -15,7 +18,7 @@ class IdeaController extends Controller
     public function index(Request $request)
     {
         $query = Idea::with('files', 'category', 'department', 'academicYear', 'user')
-            ->withCount(['likes', 'unLikes', 'comments','report']);
+            ->withCount(['likes', 'unLikes', 'comments', 'report']);
 
         // Apply filters
         if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -43,7 +46,7 @@ class IdeaController extends Controller
 
         }
         if ($request->filled('is_hidden')) {
-            if($request->is_hidden == 0){
+            if ($request->is_hidden == 0) {
                 $query->where('status', 'active');
             }
         }
@@ -55,7 +58,7 @@ class IdeaController extends Controller
         $ideas->getCollection()->transform(function ($idea) use ($userId) {
             $idea->is_liked   = $idea->likes()->where('user_id', $userId)->exists();
             $idea->is_unliked = $idea->unLikes()->where('user_id', $userId)->exists();
-            $idea->is_report  = $idea->report()->where('user_id', $userId)->exists(); 
+            $idea->is_report  = $idea->report()->where('user_id', $userId)->exists();
             return $idea;
         });
 
@@ -119,7 +122,7 @@ class IdeaController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies', 'comments.user')->withCount(['likes', 'unLikes', 'comments','report'])->find($id);
+        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies', 'comments.user')->withCount(['likes', 'unLikes', 'comments', 'report'])->find($id);
 
         if (! $idea) {
             return apiResponse(false, 'Idea not found', null, 404);
@@ -137,7 +140,7 @@ class IdeaController extends Controller
         }
         $idea->is_liked   = $idea->likes()->where('user_id', $user->id)->exists();
         $idea->is_unliked = $idea->unLikes()->where('user_id', $user->id)->exists();
-        $idea->is_report  = $idea->report()->where('user_id', $user->id)->exists(); 
+        $idea->is_report  = $idea->report()->where('user_id', $user->id)->exists();
         $idea->load('files');
 
         return apiResponse(true, 'Operation completed successfully', $idea, 200);
@@ -284,5 +287,61 @@ class IdeaController extends Controller
             'idea_id' => $request->idea_id,
         ]);
         return apiResponse(true, 'Operation completed successfully', [], 200);
+    }
+
+    public function export(Request $request)
+    {
+        // Validate incoming parameters
+        $request->validate([
+            'department_id'    => 'nullable',
+            'academic_year_id' => 'nullable',
+        ]);
+
+        // Build query
+        $query = Idea::query();
+
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        if ($request->filled('academic_year_id')) {
+            $query->where('academic_year_id', $request->academic_year_id);
+        }
+
+        // Get the ideas
+        $ideas = $query->with(['department', 'academicYear'])->get();
+        // Create spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet       = $spreadsheet->getActiveSheet();
+
+        // Header row
+        $sheet->setCellValue('A1', 'ID');
+        $sheet->setCellValue('B1', 'Title');
+        $sheet->setCellValue('C1', 'Description');
+        $sheet->setCellValue('D1', 'Department');
+        $sheet->setCellValue('E1', 'Academic Year');
+        $sheet->setCellValue('F1', 'Created At');
+
+        // Fill data
+        $row = 2;
+        foreach ($ideas as $idea) {
+            $sheet->setCellValue('A' . $row, $idea->id);
+            $sheet->setCellValue('B' . $row, $idea->title);
+            $sheet->setCellValue('C' . $row, $idea->description);
+            $sheet->setCellValue('D' . $row, $idea->department->name ?? '-');
+            $sheet->setCellValue('E' . $row, $idea->academicYear->name ?? '-');
+            $sheet->setCellValue('F' . $row, $idea->created_at->format('Y-m-d'));
+            $row++;
+        }
+
+        // Prepare the Excel file for download
+        $writer   = new Xlsx($spreadsheet);
+        $filename = 'idea_list_' . now()->format('Ymd_His') . '.xlsx';
+
+        // Output
+        $tempFile = tempnam(sys_get_temp_dir(), $filename);
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
 }

@@ -163,4 +163,9 @@ class AuthController extends Controller
 
         return apiResponse(true, 'Operation completed successfully', $roles, 200);
     }
+
+    public function requestPasswordReset(Request $request){
+        $user = auth()->user();
+        return apiResponse(true, 'Operation completed successfully', [], 200);
+    }
 }
