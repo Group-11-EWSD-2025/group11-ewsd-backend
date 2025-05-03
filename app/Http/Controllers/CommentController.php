@@ -2,9 +2,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use App\Models\Idea;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Models\Idea;
+use Illuminate\Support\Facades\Mail;
+
 
 class CommentController extends Controller
 {
@@ -55,6 +57,22 @@ class CommentController extends Controller
             'privacy' => $request->privacy,
         ]);
 
+        if ($comment) {
+            $idea = Idea::find($request->idea_id);
+
+            if ($idea && $idea->user) {
+                $ideaOwner   = $idea->user;
+                $email       = $ideaOwner->email;
+                $subject     = 'New Comment on Your Idea';
+                $bodyMessage = 'Hello ' . $ideaOwner->name . ",\n\n" .
+                'Your idea titled "' . $idea->title . '" has received a new comment. Please check it out.';
+
+                Mail::raw($bodyMessage, function ($message) use ($email, $subject) {
+                    $message->to($email)
+                        ->subject($subject);
+                });
+            }
+        }
         return apiResponse(true, 'Operation completed successfully', $comment, 200);
     }
 

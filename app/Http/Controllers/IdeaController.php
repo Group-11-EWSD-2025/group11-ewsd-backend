@@ -7,56 +7,66 @@ use App\Models\IdeaReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use ZipArchive;
+use App\Models\User;
 
 class IdeaController extends Controller
 {
 
     public function index(Request $request)
     {
+        $academic_year = getActiveAcademicYear();
         $query = Idea::with('files', 'category', 'department', 'academicYear', 'user')
-            ->withCount(['likes', 'unLikes', 'comments', 'report']);
+            ->withCount(['likes', 'unLikes', 'comments', 'report'])
+            ->leftJoin('users', 'ideas.user_id', '=', 'users.id')
+            ->where('users.is_disable', 0)
+            ->where('ideas.academic_year_id', optional($academic_year)->id)
+            ->select('ideas.*');
 
-        // Apply filters
+        // Apply date filters with table prefix
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('created_at', [$request->start_date, $request->end_date]);
+            $query->whereBetween('ideas.created_at', [$request->start_date, $request->end_date]);
         } elseif ($request->filled('start_date')) {
-            $query->whereDate('created_at', '>=', $request->start_date);
+            $query->whereDate('ideas.created_at', '>=', $request->start_date);
         } elseif ($request->filled('end_date')) {
-            $query->whereDate('created_at', '<=', $request->end_date);
+            $query->whereDate('ideas.created_at', '<=', $request->end_date);
         }
 
+        // Apply department filter
         if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+            $query->where('ideas.department_id', $request->department_id);
         }
 
+        // Apply category filter
         if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
+            $query->where('ideas.category_id', $request->category_id);
         }
 
+        // Apply sorting
         if ($request->filled('order_by')) {
             if ($request->order_by == 'likes_count') {
                 $query->orderBy('likes_count', 'desc');
             } else {
-                $query->orderByDesc($request->order_by);
-            }
-
-        }
-        if ($request->filled('is_hidden')) {
-            if ($request->is_hidden == 0) {
-                $query->where('status', 'active');
+                $query->orderByDesc('ideas.' . $request->order_by);
             }
         }
-        $ideas = $query->paginate(5);
 
-        $userId = auth()->id(); // get current user
+        // Filter by visibility
+        if ($request->filled('is_hidden') && $request->is_hidden == 0) {
+            $query->where('ideas.status', 'active');
+        }
 
-        // Add flag for is_liked and is_unliked
+        // Paginate results
+        $ideas  = $query->paginate(5);
+        $userId = auth()->id();
+
+        // Add flags to each idea
         $ideas->getCollection()->transform(function ($idea) use ($userId) {
             $idea->is_liked   = $idea->likes()->where('user_id', $userId)->exists();
             $idea->is_unliked = $idea->unLikes()->where('user_id', $userId)->exists();
@@ -112,6 +122,24 @@ class IdeaController extends Controller
             }
         }
         $idea->load('files');
+        $departmentId = $department->id;
+        if ($idea) {
+            $qc = User::where('role', 'qa-coordinator')
+                ->whereHas('departments', function ($query) use ($departmentId) {
+                    $query->where('department_id', $departmentId);
+                })
+                ->first();
+            if ($qc) {
+                $email       = $qc->email;
+                $subject     = 'New Idea Submitted';
+                $bodyMessage = 'A new idea has been submitted by ' . $user->name . '. Please review it.';
+
+                Mail::raw($bodyMessage, function ($message) use ($email, $subject) {
+                    $message->to($email)
+                        ->subject($subject);
+                });
+            }
+        }
         return apiResponse(true, 'Operation completed successfully', $idea, 201);
     }
 
