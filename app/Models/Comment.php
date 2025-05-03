@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,9 +18,13 @@ class Comment extends Model
     {
         return $this->belongsTo(User::class);
     }
+
     public function replies()
     {
-        return $this->hasMany(Reply::class);
+        return $this->hasMany(Reply::class, 'comment_id')
+            ->whereHas('user', function ($query) {
+                $query->where('is_disable', false);
+            });
     }
-    
+
 }

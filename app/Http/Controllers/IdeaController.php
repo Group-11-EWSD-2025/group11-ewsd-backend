@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Idea;
 use App\Models\IdeaFile;
 use App\Models\IdeaReport;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -14,7 +15,6 @@ use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use ZipArchive;
-use App\Models\User;
 
 class IdeaController extends Controller
 {
@@ -22,7 +22,7 @@ class IdeaController extends Controller
     public function index(Request $request)
     {
         $academic_year = getActiveAcademicYear();
-        $query = Idea::with('files', 'category', 'department', 'academicYear', 'user')
+        $query         = Idea::with('files', 'category', 'department', 'academicYear', 'user')
             ->withCount(['likes', 'unLikes', 'comments', 'report'])
             ->leftJoin('users', 'ideas.user_id', '=', 'users.id')
             ->where('users.is_disable', 0)
@@ -152,7 +152,14 @@ class IdeaController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $idea = Idea::with('files', 'category', 'department', 'user', 'comments', 'comments.replies', 'comments.user')->withCount(['likes', 'unLikes', 'comments', 'report'])->find($id);
+        $idea = Idea::with([
+            'files',
+            'category',
+            'department',
+            'user',
+            'comments.replies',
+            'comments.user',
+        ])->withCount(['likes', 'unLikes', 'comments', 'report'])->find($id);
 
         if (! $idea) {
             return apiResponse(false, 'Idea not found', null, 404);

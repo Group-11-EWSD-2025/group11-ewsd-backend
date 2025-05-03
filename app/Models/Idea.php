@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -8,7 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Idea extends Model
 {
-    use HasFactory,SoftDeletes;
+    use HasFactory, SoftDeletes;
     protected $guarded = [];
 
     public function files()
@@ -37,8 +36,12 @@ class Idea extends Model
 
     public function comments()
     {
-        return $this->hasMany(Comment::class);
+        return $this->hasMany(Comment::class)
+            ->whereHas('user', function ($query) {
+                $query->where('is_disable', 0);
+            });
     }
+
     public function likes()
     {
         return $this->hasMany(Like::class);
