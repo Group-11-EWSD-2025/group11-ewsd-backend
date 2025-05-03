@@ -65,7 +65,7 @@ class CommentController extends Controller
                 $email       = $ideaOwner->email;
                 $subject     = 'New Comment on Your Idea';
                 $bodyMessage = 'Hello ' . $ideaOwner->name . ",\n\n" .
-                'Your idea titled "' . $idea->title . '" has received a new comment. Please check it out.';
+                'Your idea id "' . $idea->id . '" has received a new comment. Please check it out.';
 
                 Mail::raw($bodyMessage, function ($message) use ($email, $subject) {
                     $message->to($email)
