@@ -80,6 +80,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('account-setting', [ConfigController::class, 'update']);
 
     Route::post('change-password', [AuthController::class, 'changePassword']);
+    Route::get('insight', [ConfigController::class, 'insight']);
    
 
 });
