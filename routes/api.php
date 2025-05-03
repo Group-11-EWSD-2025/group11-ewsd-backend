@@ -82,5 +82,5 @@ Route::middleware('auth:api')->group(function () {
     Route::post('change-password', [AuthController::class, 'changePassword']);
     Route::get('insight', [ConfigController::class, 'insight']);
    
-
 });
+Route::post('store-view', [AuthController::class, 'storeView']);

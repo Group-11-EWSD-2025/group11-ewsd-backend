@@ -208,4 +208,8 @@ class AuthController extends Controller
         }
     }
 
+    public function storeView(Request $request){
+        return apiResponse(true, 'Operation Completed', [], 200);
+    }
+
 }
