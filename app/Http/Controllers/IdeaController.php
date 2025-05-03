@@ -124,20 +124,22 @@ class IdeaController extends Controller
         $idea->load('files');
         $departmentId = $department->id;
         if ($idea) {
-            $qc = User::where('role', 'qa-coordinator')
+            $qcs = User::where('role', 'qa-coordinator')
                 ->whereHas('departments', function ($query) use ($departmentId) {
                     $query->where('department_id', $departmentId);
                 })
-                ->first();
-            if ($qc) {
-                $email       = $qc->email;
-                $subject     = 'New Idea Submitted';
-                $bodyMessage = 'A new idea has been submitted by ' . $user->name . '. Please review it.';
+                ->get();
+            foreach ($qcs as $qc) {
+                if ($qc) {
+                    $email       = $qc->email;
+                    $subject     = 'New Idea Submitted';
+                    $bodyMessage = 'A new idea has been submitted by ' . $user->name . '. Please review it.';
 
-                Mail::raw($bodyMessage, function ($message) use ($email, $subject) {
-                    $message->to($email)
-                        ->subject($subject);
-                });
+                    Mail::raw($bodyMessage, function ($message) use ($email, $subject) {
+                        $message->to($email)
+                            ->subject($subject);
+                    });
+                }
             }
         }
         return apiResponse(true, 'Operation completed successfully', $idea, 201);
