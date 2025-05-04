@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ActivityLogger;
 use App\Models\User;
+use App\Models\ActivityLog;
 use App\Services\MailService;
 use Auth;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+
 
 class AuthController extends Controller
 {
@@ -51,6 +53,13 @@ class AuthController extends Controller
     public function me()
     {
         $user = Auth::user();
+        // last one activity log
+        $lastActivityLog = ActivityLog::where('user_id', $user->id)->orderBy('created_at', 'desc')->first();
+        $user->last_login_at = $lastActivityLog ? [
+            'created_at' => $lastActivityLog->created_at,
+            'ip_address' => $lastActivityLog->ip_address,
+            'user_agent' => $lastActivityLog->user_agent,
+        ] : null;
         return apiResponse(true, 'Operation completed successfully', $user, 201);
     }
 
