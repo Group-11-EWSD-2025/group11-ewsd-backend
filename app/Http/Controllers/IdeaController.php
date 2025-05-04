@@ -22,30 +22,31 @@ class IdeaController extends Controller
     public function index(Request $request)
     {
         $academic_year = getActiveAcademicYear();
-        $query         = Idea::with('files', 'category', 'department', 'academicYear', 'user')
+
+        $query = Idea::with(['files', 'category', 'department', 'academicYear', 'user'])
             ->withCount(['likes', 'unLikes', 'comments', 'report'])
-            ->leftJoin('users', 'ideas.user_id', '=', 'users.id')
-            ->where('users.is_disable', 0)
-            ->where('ideas.academic_year_id', optional($academic_year)->id)
-            ->select('ideas.*');
+            ->whereHas('user', function ($q) {
+                $q->where('is_disable', 0);
+            })
+            ->where('academic_year_id', optional($academic_year)->id);
 
-        // Apply date filters with table prefix
+        // Apply date filters
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('ideas.created_at', [$request->start_date, $request->end_date]);
+            $query->whereBetween('created_at', [$request->start_date, $request->end_date]);
         } elseif ($request->filled('start_date')) {
-            $query->whereDate('ideas.created_at', '>=', $request->start_date);
+            $query->whereDate('created_at', '>=', $request->start_date);
         } elseif ($request->filled('end_date')) {
-            $query->whereDate('ideas.created_at', '<=', $request->end_date);
+            $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        // Apply department filter
+        // Department filter
         if ($request->filled('department_id')) {
-            $query->where('ideas.department_id', $request->department_id);
+            $query->where('department_id', $request->department_id);
         }
 
-        // Apply category filter
+        // Category filter
         if ($request->filled('category_id')) {
-            $query->where('ideas.category_id', $request->category_id);
+            $query->where('category_id', $request->category_id);
         }
 
         // Apply sorting
@@ -53,20 +54,20 @@ class IdeaController extends Controller
             if ($request->order_by == 'likes_count') {
                 $query->orderBy('likes_count', 'desc');
             } else {
-                $query->orderByDesc('ideas.' . $request->order_by);
+                $query->orderByDesc($request->order_by);
             }
         }
 
-        // Filter by visibility
+        // Visibility filter
         if ($request->filled('is_hidden') && $request->is_hidden == 0) {
-            $query->where('ideas.status', 'active');
+            $query->where('status', 'active');
         }
 
         // Paginate results
         $ideas  = $query->paginate(5);
         $userId = auth()->id();
 
-        // Add flags to each idea
+        // Add flags for each idea
         $ideas->getCollection()->transform(function ($idea) use ($userId) {
             $idea->is_liked   = $idea->likes()->where('user_id', $userId)->exists();
             $idea->is_unliked = $idea->unLikes()->where('user_id', $userId)->exists();
