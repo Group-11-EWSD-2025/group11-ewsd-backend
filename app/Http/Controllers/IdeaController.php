@@ -23,7 +23,7 @@ class IdeaController extends Controller
     {
         $user = auth()->user();
         // Check if the user is a QA coordinator
-        if ($user->role !== 'staff') {
+        if ($user->role != 'staff') {
             $academic_year = AcademicYear::orderBy('created_at', 'desc')->first();
         } else {
             $academic_year = getActiveAcademicYear();
