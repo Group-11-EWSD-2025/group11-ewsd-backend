@@ -380,8 +380,7 @@ class IdeaController extends Controller
             $sheet       = $spreadsheet->getActiveSheet();
 
             $sheet->setCellValue('A1', 'ID');
-            $sheet->setCellValue('B1', 'Title');
-            $sheet->setCellValue('C1', 'Description');
+            $sheet->setCellValue('C1', 'Content');
             $sheet->setCellValue('D1', 'Department');
             $sheet->setCellValue('E1', 'Academic Year');
             $sheet->setCellValue('F1', 'Created At');
@@ -389,10 +388,9 @@ class IdeaController extends Controller
             $row = 2;
             foreach ($ideas as $idea) {
                 $sheet->setCellValue('A' . $row, $idea->id);
-                $sheet->setCellValue('B' . $row, $idea->title);
-                $sheet->setCellValue('C' . $row, $idea->description);
+                $sheet->setCellValue('C' . $row, $idea->content);
                 $sheet->setCellValue('D' . $row, $idea->department->name ?? '-');
-                $sheet->setCellValue('E' . $row, $idea->academicYear->name ?? '-');
+                $sheet->setCellValue('E' . $row, $idea->academicYear->start_date . ' - ' . $idea->academicYear->end_date);
                 $sheet->setCellValue('F' . $row, $idea->created_at->format('Y-m-d'));
                 $row++;
             }
