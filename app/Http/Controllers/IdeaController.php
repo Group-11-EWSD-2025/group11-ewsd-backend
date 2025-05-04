@@ -28,20 +28,12 @@ class IdeaController extends Controller
         } else {
             $academic_year = getActiveAcademicYear();
         }
-        if ($academic_year) {
-            $query = Idea::with(['files', 'category', 'department', 'academicYear', 'user'])
-                ->withCount(['likes', 'unLikes', 'comments', 'report'])
-                ->whereHas('user', function ($q) {
-                    $q->where('is_disable', 0);
-                })
-                ->where('academic_year_id', optional($academic_year)->id);
-        } else {
-            $query = Idea::with(['files', 'category', 'department', 'academicYear', 'user'])
-                ->withCount(['likes', 'unLikes', 'comments', 'report'])
-                ->whereHas('user', function ($q) {
-                    $q->where('is_disable', 0);
-                });
-        }
+        $query = Idea::with(['files', 'category', 'department', 'academicYear', 'user'])
+            ->withCount(['likes', 'unLikes', 'comments', 'report'])
+            ->whereHas('user', function ($q) {
+                $q->where('is_disable', 0);
+            })
+            ->where('academic_year_id', optional($academic_year)->id);
 
         // Apply date filters
         if ($request->filled('start_date') && $request->filled('end_date')) {
