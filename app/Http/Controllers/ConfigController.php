@@ -1,15 +1,15 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
+use App\Models\Comment;
 use App\Models\Config;
 use App\Models\Idea;
 use App\Models\MostViewPage;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use App\Models\User;
-use App\Models\Comment;
-use App\Models\ActivityLog;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class ConfigController extends Controller
 {
@@ -70,7 +70,7 @@ class ConfigController extends Controller
             return apiResponse(false, $firstError, null, 400);
         }
 
-        $total_ideas = Idea::where('academic_year_id',$request->academic_year_id)
+        $total_ideas = Idea::where('academic_year_id', $request->academic_year_id)
             ->where('department_id', $request->deaprtment_id)
             ->count();
         $most_view_pages = MostViewPage::orderByDesc('view_count')
@@ -78,30 +78,47 @@ class ConfigController extends Controller
             ->pluck('view_count', 'page_name')
             ->toArray();
         $total_comments = Comment::whereHas('idea', function ($query) use ($request) {
-                $query->where('academic_year_id', $request->academic_year_id)
-                    ->where('department_id', $request->deaprtment_id);
-            })->count();
-        $total_user = User::count();
+            $query->where('academic_year_id', $request->academic_year_id)
+                ->where('department_id', $request->deaprtment_id);
+        })->count();
+        $total_user        = User::count();
         $most_active_users = ActivityLog::where('activity_type', 'login')
-        ->join('users', 'activity_logs.user_id', '=', 'users.id')
-        ->select('users.name', DB::raw('count(*) as login_count'))
-        ->groupBy('users.id', 'users.name')
-        ->orderBy('login_count', 'desc')
-        ->limit(3)
-        ->get();
+            ->join('users', 'activity_logs.user_id', '=', 'users.id')
+            ->select('users.name', DB::raw('count(*) as login_count'))
+            ->groupBy('users.id', 'users.name')
+            ->orderBy('login_count', 'desc')
+            ->limit(3)
+            ->get();
         $active = [];
         foreach ($most_active_users as $user) {
             $active[$user->name] = $user->login_count;
         }
         $browser_usage = ActivityLog::select('user_agent', DB::raw('count(*) as count'))
-        ->groupBy('user_agent')
-        ->orderBy('count', 'desc')
-        ->limit(3)
-        ->get();
+            ->groupBy('user_agent')
+            ->orderBy('count', 'desc')
+            ->limit(3)
+            ->get();
         // dd($browser_usage);
         $browser_array = [];
+
         foreach ($browser_usage as $browser) {
-            $browser_array[$browser->user_agent] = $browser->count;
+            $agent = strtolower($browser->user_agent);
+
+            if (str_contains($agent, 'chrome')) {
+                $browser_name = 'Chrome';
+            } elseif (str_contains($agent, 'firefox')) {
+                $browser_name = 'Firefox';
+            } elseif (str_contains($agent, 'safari') && ! str_contains($agent, 'chrome')) {
+                $browser_name = 'Safari';
+            } else {
+                continue; // skip unknown browsers
+            }
+
+            if (isset($browser_array[$browser_name])) {
+                $browser_array[$browser_name] += $browser->count;
+            } else {
+                $browser_array[$browser_name] = $browser->count;
+            }
         }
         $result = [
             'total_ideas'       => $total_ideas,
