@@ -71,7 +71,7 @@ class ConfigController extends Controller
         }
 
         $total_ideas = Idea::where('academic_year_id', $request->academic_year_id)
-            ->where('department_id', $request->deaprtment_id)
+            ->where('department_id', $request->department_id)
             ->count();
         $most_view_pages = MostViewPage::orderByDesc('view_count')
             ->limit(3)
@@ -79,7 +79,7 @@ class ConfigController extends Controller
             ->toArray();
         $total_comments = Comment::whereHas('idea', function ($query) use ($request) {
             $query->where('academic_year_id', $request->academic_year_id)
-                ->where('department_id', $request->deaprtment_id);
+                ->where('department_id', $request->department_id);
         })->count();
         $total_user        = User::count();
         $most_active_users = ActivityLog::where('activity_type', 'login')
