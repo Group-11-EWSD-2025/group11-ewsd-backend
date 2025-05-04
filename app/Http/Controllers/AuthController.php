@@ -2,19 +2,19 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ActivityLogger;
-use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\MostViewPage;
+use App\Models\User;
 use App\Services\MailService;
 use Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-
 
 class AuthController extends Controller
 {
@@ -54,12 +54,18 @@ class AuthController extends Controller
     {
         $user = Auth::user();
         // last one activity log
-        $lastActivityLog = ActivityLog::where('user_id', $user->id)->orderBy('created_at', 'desc')->first();
-        $user->last_login_at = $lastActivityLog ? [
-            'created_at' => $lastActivityLog->created_at,
-            'ip_address' => $lastActivityLog->ip_address,
-            'user_agent' => $lastActivityLog->user_agent,
-        ] : null;
+        $lastActivityLogs = ActivityLog::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+        if (count($lastActivityLogs) > 1) {
+            $lastActivityLog     = $lastActivityLogs->first();
+            $user->last_login_at = $lastActivityLog ? [
+                'created_at' => $lastActivityLog->created_at,
+                'ip_address' => $lastActivityLog->ip_address,
+                'user_agent' => $lastActivityLog->user_agent,
+            ] : null;
+        } else {
+            $user->last_login_at = null;
+
+        }
         return apiResponse(true, 'Operation completed successfully', $user, 201);
     }
 
@@ -179,7 +185,7 @@ class AuthController extends Controller
     public function requestPasswordReset(Request $request)
     {
         $email = $request->email;
-        $user = User::where('email',$email)->first();
+        $user  = User::where('email', $email)->first();
         if (! $user) {
             return apiResponse(false, 'User not authenticated', [], 401);
         }
@@ -217,7 +223,12 @@ class AuthController extends Controller
         }
     }
 
-    public function storeView(Request $request){
+    public function storeView(Request $request)
+    {
+        MostViewPage::updateOrCreate(
+            ['page_name' => $request->page_name],
+            ['view_count' => DB::raw('view_count + 1')]
+        );
         return apiResponse(true, 'Operation Completed', [], 200);
     }
 
