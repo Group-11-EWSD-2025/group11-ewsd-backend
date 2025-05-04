@@ -104,9 +104,9 @@ class ConfigController extends Controller
         foreach ($browser_usage as $browser) {
             $agent = strtolower($browser->user_agent);
 
-            if (str_contains($agent, 'Chrome/135.0.0.0')) {
+            if (str_contains($agent, 'chrome')) {
                 $browser_name = 'Chrome';
-            } elseif (str_contains($agent, 'Firefox')) {
+            } elseif (str_contains($agent, 'firefox')) {
                 $browser_name = 'Firefox';
             } elseif (str_contains($agent, 'safari') && ! str_contains($agent, 'chrome')) {
                 $browser_name = 'Safari';

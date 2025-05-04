@@ -21,14 +21,27 @@ class IdeaController extends Controller
 
     public function index(Request $request)
     {
-        $academic_year = getActiveAcademicYear();
-
-        $query = Idea::with(['files', 'category', 'department', 'academicYear', 'user'])
-            ->withCount(['likes', 'unLikes', 'comments', 'report'])
-            ->whereHas('user', function ($q) {
-                $q->where('is_disable', 0);
-            })
-            ->where('academic_year_id', optional($academic_year)->id);
+        $user = auth()->user();
+        // Check if the user is a QA coordinator
+        if ($user->role !== 'staff') {
+            $academic_year = null;
+        } else {
+            $academic_year = getActiveAcademicYear();
+        }
+        if ($academic_year) {
+            $query = Idea::with(['files', 'category', 'department', 'academicYear', 'user'])
+                ->withCount(['likes', 'unLikes', 'comments', 'report'])
+                ->whereHas('user', function ($q) {
+                    $q->where('is_disable', 0);
+                })
+                ->where('academic_year_id', optional($academic_year)->id);
+        } else {
+            $query = Idea::with(['files', 'category', 'department', 'academicYear', 'user'])
+                ->withCount(['likes', 'unLikes', 'comments', 'report'])
+                ->whereHas('user', function ($q) {
+                    $q->where('is_disable', 0);
+                });
+        }
 
         // Apply date filters
         if ($request->filled('start_date') && $request->filled('end_date')) {
