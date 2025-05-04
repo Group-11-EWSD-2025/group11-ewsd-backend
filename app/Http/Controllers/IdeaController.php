@@ -380,18 +380,18 @@ class IdeaController extends Controller
             $sheet       = $spreadsheet->getActiveSheet();
 
             $sheet->setCellValue('A1', 'ID');
-            $sheet->setCellValue('C1', 'Content');
-            $sheet->setCellValue('D1', 'Department');
-            $sheet->setCellValue('E1', 'Academic Year');
-            $sheet->setCellValue('F1', 'Created At');
+            $sheet->setCellValue('B1', 'Content');
+            $sheet->setCellValue('C1', 'Department');
+            $sheet->setCellValue('D1', 'Academic Year');
+            $sheet->setCellValue('E1', 'Created At');
 
             $row = 2;
             foreach ($ideas as $idea) {
                 $sheet->setCellValue('A' . $row, $idea->id);
-                $sheet->setCellValue('C' . $row, $idea->content);
-                $sheet->setCellValue('D' . $row, $idea->department->name ?? '-');
-                $sheet->setCellValue('E' . $row, $idea->academicYear->start_date . ' - ' . $idea->academicYear->end_date);
-                $sheet->setCellValue('F' . $row, $idea->created_at->format('Y-m-d'));
+                $sheet->setCellValue('B' . $row, $idea->content);
+                $sheet->setCellValue('C' . $row, $idea->department->name ?? '-');
+                $sheet->setCellValue('D' . $row, $idea->academicYear->start_date . ' - ' . $idea->academicYear->end_date);
+                $sheet->setCellValue('E' . $row, $idea->created_at->format('Y-m-d'));
                 $row++;
             }
 
