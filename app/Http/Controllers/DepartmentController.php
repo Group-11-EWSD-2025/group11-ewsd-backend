@@ -14,34 +14,32 @@ class DepartmentController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
-{
-    if ($request->has('user_id')) {
-        $count = UserDepartment::where('user_id', $request->user_id)->count();
-        if ($count == 0) {
+    {
+        if ($request->has('user_id')) {
+            $count = UserDepartment::where('user_id', $request->user_id)->count();
+            if ($count == 0) {
+                $departments = Department::orderByDesc('id')->get();
+            } else {
+                $departments = Department::whereHas('users', function ($query) use ($request) {
+                    $query->where('user_id', $request->user_id);
+                })->orderByDesc('id')->get();
+            }
+
+        } else {
             $departments = Department::orderByDesc('id')->get();
         }
-        else{
-            $departments = Department::whereHas('users', function ($query) use ($request) {
-                $query->where('user_id', $request->user_id);
-            })->orderByDesc('id')->get();
+
+        $result = [];
+        foreach ($departments as $department) {
+            $result[] = [
+                'id'         => $department->id,
+                'name'       => $department->name,
+                'idea_count' => $department->ideas()->count(),
+            ];
         }
-        
-    } else {
-        $departments = Department::orderByDesc('id')->get();
+
+        return apiResponse(true, 'Operation completed successfully', $result, 200);
     }
-
-    $result = [];
-    foreach ($departments as $department) {
-        $result[] = [
-            'id' => $department->id,
-            'name' => $department->name,
-            'idea_count' => $department->ideas()->count(),
-        ];
-    }
-
-    return apiResponse(true, 'Operation completed successfully', $result, 200);
-}
-
 
     /**
      * Show the form for creating a new resource.
@@ -93,8 +91,9 @@ class DepartmentController extends Controller
 
     public function detail($id)
     {
-        $department = Department::find($id);
-        $department->idea_count = $department->ideas()->count();
+        $currentYear            = getActiveAcademicYear();
+        $department             = Department::find($id);
+        $department->idea_count = $department->ideas()->where('academic_year_id', optional($currentYear)->id)->count();
         return apiResponse(true, 'Operation completed successfully', $department, 200);
     }
 
@@ -102,7 +101,7 @@ class DepartmentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'id' => 'required|exists:departments,id'
+            'id'   => 'required|exists:departments,id',
         ]);
 
         if ($validator->fails()) {

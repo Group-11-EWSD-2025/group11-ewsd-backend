@@ -7,6 +7,7 @@ use App\Models\Config;
 use App\Models\Idea;
 use App\Models\MostViewPage;
 use App\Models\User;
+use App\Models\UserDepartment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -81,7 +82,7 @@ class ConfigController extends Controller
             $query->where('academic_year_id', $request->academic_year_id)
                 ->where('department_id', $request->department_id);
         })->count();
-        $total_user        = User::count();
+        $total_user        = UserDepartment::where('department_id', $request->department_id)->count();
         $most_active_users = ActivityLog::where('activity_type', 'login')
             ->join('users', 'activity_logs.user_id', '=', 'users.id')
             ->select('users.name', DB::raw('count(*) as login_count'))
